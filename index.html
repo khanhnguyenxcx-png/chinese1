@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HSK 1 Ultimate Mastery Suite</title>
+    <title>HSK 1 Intelligent Spaced Repetition Suite</title>
     <style>
         :root {
             --primary: #3498db;
@@ -71,7 +71,6 @@
             color: var(--dark);
         }
 
-        /* Feedback Toast Notification */
         .feedback-banner {
             padding: 12px;
             border-radius: 8px;
@@ -83,9 +82,8 @@
         .feedback-correct { background-color: #d4edda; color: #155724; }
         .feedback-wrong { background-color: #f8d7da; color: #721c24; }
 
-        /* Mode 1: Flashcard Style (Anki) */
         .card-wrapper { perspective: 1000px; height: 230px; margin-bottom: 20px; }
-        .flashcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.4s ease; cursor: pointer; }
+        .flashcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.3s ease; cursor: pointer; }
         .flashcard.flipped { transform: rotateY(180deg); }
         .card-side { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border: 2px solid #e0e0e0; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; background: white; }
         .card-back { transform: rotateY(180deg); border-color: var(--primary); }
@@ -103,7 +101,6 @@
         .btn-good { background: var(--primary); color: white; }
         .btn-easy { background: var(--success); color: white; }
 
-        /* Mode 2: Creative Learn Engine */
         .question-box { background: #f8f9fa; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #e9ecef; }
         .q-type-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #95a5a6; font-weight: bold; margin-bottom: 5px; }
         .q-main { font-size: 42px; font-weight: bold; color: var(--dark); margin: 10px 0; }
@@ -111,7 +108,6 @@
         .option-btn { background: white; border: 2px solid #e0e0e0; padding: 14px; border-radius: 8px; font-size: 16px; cursor: pointer; text-align: left; transition: all 0.2s; }
         .option-btn:hover { border-color: var(--primary); background: #f0f7fc; }
 
-        /* Mode 3: Reflex Matching System */
         .reflex-intro { text-align: center; padding: 20px; }
         .grid-reflex { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
         .tile { background: white; border: 2px solid #cbd5e1; border-radius: 8px; padding: 15px 5px; text-align: center; font-size: 16px; font-weight: 600; cursor: pointer; user-select: none; transition: all 0.2s; min-height: 50px; display: flex; align-items: center; justify-content: center; word-break: break-word; }
@@ -119,31 +115,32 @@
         .tile.matched { visibility: hidden; opacity: 0; pointer-events: none; }
         .tile.wrong { border-color: var(--danger); background-color: #fee2e2; animation: shake 0.3s ease; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+        
+        .debug-box { margin-top: 25px; padding: 10px; background: #eee; border-radius: 6px; font-size: 11px; text-align: center; color: #666; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchView('flashcard')">Flashcard (Anki)</button>
+        <button class="tab-btn active" onclick="switchView('flashcard')">Flashcard (SRS)</button>
         <button class="tab-btn" onclick="switchView('learn')">Learn Mode</button>
         <button class="tab-btn" onclick="switchView('reflex')">Reflex Mode</button>
     </div>
 
-    <!-- Banner for non-blocking alerts -->
     <div class="feedback-banner" id="feedbackBanner"></div>
 
-    <!-- MODE 1: FLASHCARD (ANKI) -->
+    <!-- MODE 1: FLASHCARD (SRS) -->
     <div id="view-flashcard" class="view-section active">
         <div class="stats-panel">
-            <span id="fc-count">Active Cards: --</span>
-            <span id="fc-mastered" style="color: var(--success)">Mastered: 0/150</span>
+            <span id="fc-count" style="color: var(--danger)">Due Cards: --</span>
+            <span id="fc-mastered" style="color: var(--success)">System Progress: --</span>
         </div>
         <div class="card-wrapper" onclick="flipFlashcard()">
             <div class="flashcard" id="flashcardObj">
                 <div class="card-side card-front">
                     <p class="text-char" id="fc-front-text">我</p>
-                    <span class="text-hint">Click card back layout to flip</span>
+                    <span class="text-hint">Click card or button to reveal</span>
                 </div>
                 <div class="card-side card-back">
                     <p class="text-pinyin" id="fc-back-pinyin">wǒ</p>
@@ -153,14 +150,14 @@
         </div>
         <button class="btn btn-main" id="fc-reveal-btn" onclick="flipFlashcard()">Reveal Answer</button>
         <div class="anki-grid" id="fc-controls" style="display: none;">
-            <button class="btn btn-again" onclick="processAnki('again')">No Good</button>
-            <button class="btn btn-hard" onclick="processAnki('hard')">Hard</button>
-            <button class="btn btn-good" onclick="processAnki('good')">Good</button>
-            <button class="btn btn-easy" onclick="processAnki('easy')">Very Good</button>
+            <button class="btn btn-again" onclick="processSRS(0)">No Good</button>
+            <button class="btn btn-hard" onclick="processSRS(2)">Hard</button>
+            <button class="btn btn-good" onclick="processSRS(4)">Good</button>
+            <button class="btn btn-easy" onclick="processSRS(5)">Very Good</button>
         </div>
     </div>
 
-    <!-- MODE 2: LEARN MODE (CREATIVE ENGINE) -->
+    <!-- MODE 2: LEARN MODE -->
     <div id="view-learn" class="view-section">
         <div class="stats-panel">
             <span id="learn-progress">Question: 1/10</span>
@@ -186,10 +183,13 @@
         </div>
         <div class="grid-reflex" id="reflex-board" style="display: none;"></div>
     </div>
+    
+    <div class="debug-box">
+        <span onclick="resetAllSrsData()" style="cursor:pointer; text-decoration: underline;">Reset All Saved Progress Data</span>
+    </div>
 </div>
 
 <script>
-    // Core Vocabulary List
     const CORE_WORDS = [
         {"character": "我", "pinyin": "wǒ", "meaning": "I, me"},
         {"character": "我们", "pinyin": "wǒmen", "meaning": "we, us (pl.)"},
@@ -216,35 +216,35 @@
         {"character": "八", "pinyin": "bā", "meaning": "eight"},
         {"character": "九", "pinyin": "jiǔ", "meaning": "nine"},
         {"character": "十", "pinyin": "shí", "meaning": "ten"},
-        {"character": "个", "pinyin": "gè", "meaning": "(for normal objects)"},
-        {"character": "岁", "pinyin": "suì", "meaning": "(for age)"},
-        {"character": "本", "pinyin": "běn", "meaning": "(for books)"},
-        {"character": "些", "pinyin": "xiē", "meaning": "some"},
+        {"character": "个", "pinyin": "gè", "meaning": "(general object measure)"},
+        {"character": "岁", "pinyin": "suì", "meaning": "years old (age)"},
+        {"character": "本", "pinyin": "běn", "meaning": "(measure word for books)"},
+        {"character": "些", "pinyin": "xiē", "meaning": "some, several"},
         {"character": "块", "pinyin": "kuài", "meaning": "piece, chunk"},
-        {"character": "不", "pinyin": "bù", "meaning": "no"},
-        {"character": "没", "pinyin": "méi", "meaning": "no"},
+        {"character": "不", "pinyin": "bù", "meaning": "no, not"},
+        {"character": "没", "pinyin": "méi", "meaning": "have not, no"},
         {"character": "很", "pinyin": "hěn", "meaning": "quite, very"},
-        {"character": "太", "pinyin": "tài", "meaning": "too"},
-        {"character": "都", "pinyin": "dōu", "meaning": "all"},
+        {"character": "太", "pinyin": "tài", "meaning": "too, excessively"},
+        {"character": "都", "pinyin": "dōu", "meaning": "all, both"},
         {"character": "一点儿", "pinyin": "yīdiǎnr", "meaning": "a little bit"},
         {"character": "和", "pinyin": "hé", "meaning": "and"},
-        {"character": "在", "pinyin": "zài", "meaning": "in, at"},
+        {"character": "在", "pinyin": "zài", "meaning": "in, at, present"},
         {"character": "的", "pinyin": "de", "meaning": "possessive particle"},
         {"character": "了", "pinyin": "le", "meaning": "completed action particle"},
         {"character": "吗", "pinyin": "ma", "meaning": "question particle"},
-        {"character": "呢", "pinyin": "ne", "meaning": "modal particle"},
-        {"character": "喂", "pinyin": "wèi", "meaning": "hello"},
-        {"character": "家", "pinyin": "jiā", "meaning": "home"},
+        {"character": "呢", "pinyin": "ne", "meaning": "modal response particle"},
+        {"character": "喂", "pinyin": "wèi", "meaning": "hello (on phone)"},
+        {"character": "家", "pinyin": "jiā", "meaning": "home, family"},
         {"character": "学校", "pinyin": "xuéxiào", "meaning": "school"},
         {"character": "饭店", "pinyin": "fàndiàn", "meaning": "restaurant"},
-        {"character": "商店", "pinyin": "shāngdiàn", "meaning": "store"},
+        {"character": "商店", "pinyin": "shāngdiàn", "meaning": "store, shop"},
         {"character": "医院", "pinyin": "yīyuàn", "meaning": "hospital"},
         {"character": "中国", "pinyin": "Zhōngguó", "meaning": "China"},
         {"character": "北京", "pinyin": "Běijīng", "meaning": "Beijing"},
-        {"character": "上", "pinyin": "shàng", "meaning": "up"},
-        {"character": "下", "pinyin": "xià", "meaning": "down"},
-        {"character": "前面", "pinyin": "qiánmiàn", "meaning": "front"},
-        {"character": "后面", "pinyin": "hòumiàn", "meaning": "behind"},
+        {"character": "上", "pinyin": "shàng", "meaning": "up, above"},
+        {"character": "下", "pinyin": "xià", "meaning": "down, below"},
+        {"character": "前面", "pinyin": "qiánmiàn", "meaning": "front, ahead"},
+        {"character": "后面", "pinyin": "hòumiàn", "meaning": "behind, rear"},
         {"character": "里面", "pinyin": "lǐmiàn", "meaning": "inside"},
         {"character": "今天", "pinyin": "jīntiān", "meaning": "today"},
         {"character": "明天", "pinyin": "míngtiān", "meaning": "tomorrow"},
@@ -254,12 +254,12 @@
         {"character": "下午", "pinyin": "xiàwǔ", "meaning": "afternoon"},
         {"character": "年", "pinyin": "nián", "meaning": "year"},
         {"character": "月", "pinyin": "yuè", "meaning": "month"},
-        {"character": "号", "pinyin": "hào", "meaning": "number/date"},
+        {"character": "号", "pinyin": "hào", "meaning": "date number"},
         {"character": "星期", "pinyin": "xīngqī", "meaning": "week"},
         {"character": "点", "pinyin": "diǎn", "meaning": "o’clock"},
         {"character": "分钟", "pinyin": "fēnzhōng", "meaning": "minute"},
-        {"character": "现在", "pinyin": "xiànzài", "meaning": "now"},
-        {"character": "时候", "pinyin": "shíhou", "meaning": "time"},
+        {"character": "now", "pinyin": "xiànzài", "meaning": "now"},
+        {"character": "时候", "pinyin": "shíhou", "meaning": "time, period"},
         {"character": "爸爸", "pinyin": "bàba", "meaning": "father"},
         {"character": "妈妈", "pinyin": "māma", "meaning": "mother"},
         {"character": "儿子", "pinyin": "érzi", "meaning": "son"},
@@ -269,96 +269,233 @@
         {"character": "同学", "pinyin": "tóngxué", "meaning": "classmate"},
         {"character": "朋友", "pinyin": "péngyou", "meaning": "friend"},
         {"character": "医生", "pinyin": "yīshēng", "meaning": "doctor"},
-        {"character": "先生", "pinyin": "xiānsheng", "meaning": "sir"},
+        {"character": "先生", "pinyin": "xiānsheng", "meaning": "sir, gentleman"},
         {"character": "小姐", "pinyin": "xiǎojiě", "meaning": "Miss"},
-        {"character": "衣服", "pinyin": "yīfu", "meaning": "cloth"},
+        {"character": "衣服", "pinyin": "yīfu", "meaning": "clothes"},
         {"character": "水", "pinyin": "shuǐ", "meaning": "water"},
-        {"character": "菜", "pinyin": "cài", "meaning": "dish"},
-        {"character": "米饭", "pinyin": "mǐfàn", "meaning": "rice"},
+        {"character": "菜", "pinyin": "cài", "meaning": "dish, vegetable"},
+        {"character": "米饭", "pinyin": "mǐfàn", "meaning": "cooked rice"},
         {"character": "水果", "pinyin": "shuǐguǒ", "meaning": "fruit"},
         {"character": "苹果", "pinyin": "píngguǒ", "meaning": "apple"},
         {"character": "茶", "pinyin": "chá", "meaning": "tea"},
-        {"character": "杯子", "pinyin": "bēizi", "meaning": "cup"},
+        {"character": "杯子", "pinyin": "bēizi", "meaning": "cup, glass"},
         {"character": "钱", "pinyin": "qián", "meaning": "money"},
         {"character": "飞机", "pinyin": "fēijī", "meaning": "airplane"},
         {"character": "出租车", "pinyin": "chūzūchē", "meaning": "taxi"},
         {"character": "电视", "pinyin": "diànshì", "meaning": "television"},
         {"character": "电脑", "pinyin": "diànnǎo", "meaning": "computer"},
-        {"character": "电影", "pinyin": "diànyǐng", "meaning": "movie"},
+        {"character": "电影", "pinyin": "diànyǐng", "meaning": "movie, film"},
         {"character": "天气", "pinyin": "tiānqì", "meaning": "weather"},
         {"character": "猫", "pinyin": "māo", "meaning": "cat"},
         {"character": "狗", "pinyin": "gǒu", "meaning": "dog"},
-        {"character": "东西", "pinyin": "dōngxi", "meaning": "thing"},
+        {"character": "东西", "pinyin": "dōngxi", "meaning": "thing, object"},
         {"character": "人", "pinyin": "rén", "meaning": "person"},
         {"character": "名字", "pinyin": "míngzi", "meaning": "name"},
         {"character": "书", "pinyin": "shū", "meaning": "book"},
-        {"character": "汉语", "pinyin": "hànyǔ", "meaning": "mandarin Chinese"},
+        {"character": "汉语", "pinyin": "hànyǔ", "meaning": "Mandarin Chinese"},
         {"character": "字", "pinyin": "zì", "meaning": "character"},
-        {"character": "桌子", "pinyin": "zhuōzi", "meaning": "desk"},
+        {"character": "桌子", "pinyin": "zhuōzi", "meaning": "desk, table"},
         {"character": "椅子", "pinyin": "yǐzi", "meaning": "chair"},
-        {"character": "谢谢", "pinyin": "xièxie", "meaning": "thank"},
+        {"character": "谢谢", "pinyin": "xièxie", "meaning": "thank you"},
         {"character": "不客气", "pinyin": "búkèqì", "meaning": "you are welcome"},
         {"character": "再见", "pinyin": "zàijiàn", "meaning": "good-bye"},
-        {"character": "请", "pinyin": "qǐng", "meaning": "please"},
+        {"character": "请", "pinyin": "qǐng", "meaning": "please, invite"},
         {"character": "对不起", "pinyin": "duìbùqǐ", "meaning": "sorry"},
         {"character": "没关系", "pinyin": "méiguānxì", "meaning": "It doesn’t matter"},
         {"character": "是", "pinyin": "shì", "meaning": "be (am, is, are)"},
-        {"character": "有", "pinyin": "yǒu", "meaning": "have"},
-        {"character": "看", "pinyin": "kàn", "meaning": "look"},
+        {"character": "有", "pinyin": "yǒu", "meaning": "have, possess"},
+        {"character": "看", "pinyin": "kàn", "meaning": "look, watch"},
         {"character": "听", "pinyin": "tīng", "meaning": "listen"},
-        {"character": "说", "pinyin": "shuō", "meaning": "speak"},
-        {"character": "读", "pinyin": "dú", "meaning": "read"},
+        {"character": "说", "pinyin": "shuō", "meaning": "speak, talk"},
+        {"character": "读", "pinyin": "dú", "meaning": "read aloud"},
         {"character": "写", "pinyin": "xiě", "meaning": "write"},
-        {"character": "看见", "pinyin": "kànjiàn", "meaning": "see"},
-        {"character": "叫", "pinyin": "jiào", "meaning": "call"},
+        {"character": "看见", "pinyin": "kànjiàn", "meaning": "see, catch sight of"},
+        {"character": "叫", "pinyin": "jiào", "meaning": "call, name"},
         {"character": "来", "pinyin": "lái", "meaning": "come"},
-        {"character": "回", "pinyin": "huí", "meaning": "return"},
+        {"character": "回", "pinyin": "huí", "meaning": "return, go back"},
         {"character": "去", "pinyin": "qù", "meaning": "go"},
         {"character": "吃", "pinyin": "chī", "meaning": "eat"},
         {"character": "喝", "pinyin": "hē", "meaning": "drink"},
         {"character": "睡觉", "pinyin": "shuìjiào", "meaning": "sleep"},
         {"character": "打电话", "pinyin": "dǎdiànhuà", "meaning": "make phone call"},
-        {"character": "做", "pinyin": "zuò", "meaning": "do"},
+        {"character": "做", "pinyin": "zuò", "meaning": "do, make"},
         {"character": "买", "pinyin": "mǎi", "meaning": "buy"},
-        {"character": "开", "pinyin": "kāi", "meaning": "open"},
+        {"character": "开", "pinyin": "kāi", "meaning": "open, drive"},
         {"character": "坐", "pinyin": "zuò", "meaning": "sit"},
-        {"character": "住", "pinyin": "zhù", "meaning": "live"},
-        {"character": "学习", "pinyin": "xuéxí", "meaning": "study"},
-        {"character": "工作", "pinyin": "gōngzuò", "meaning": "work"},
+        {"character": "住", "pinyin": "zhù", "meaning": "live, reside"},
+        {"character": "学习", "pinyin": "xuéxí", "meaning": "study, learn"},
+        {"character": "工作", "pinyin": "gōngzuò", "meaning": "work, job"},
         {"character": "下雨", "pinyin": "xiàyǔ", "meaning": "rain"},
         {"character": "爱", "pinyin": "ài", "meaning": "love"},
-        {"character": "喜欢", "pinyin": "xǐhuan", "meaning": "love, like"},
-        {"character": "想", "pinyin": "xiǎng", "meaning": "want"},
-        {"character": "认识", "pinyin": "rènshi", "meaning": "know"},
-        {"character": "会", "pinyin": "huì", "meaning": "can"},
+        {"character": "喜欢", "pinyin": "xǐhuan", "meaning": "like, love"},
+        {"character": "想", "pinyin": "xiǎng", "meaning": "want, think"},
+        {"character": "认识", "pinyin": "rènshi", "meaning": "know, recognize"},
+        {"character": "会", "pinyin": "huì", "meaning": "can, know how to"},
         {"character": "能", "pinyin": "néng", "meaning": "can, be able to"},
-        {"character": "好", "pinyin": "hǎo", "meaning": "good"},
-        {"character": "大", "pinyin": "dà", "meaning": "big"},
-        {"character": "小", "pinyin": "xiǎo", "meaning": "small"},
+        {"character": "好", "pinyin": "hǎo", "meaning": "good, well"},
+        {"character": "大", "pinyin": "dà", "meaning": "big, large"},
+        {"character": "小", "pinyin": "xiǎo", "meaning": "small, little"},
         {"character": "多", "pinyin": "duō", "meaning": "many, much"},
         {"character": "少", "pinyin": "shǎo", "meaning": "few, little"},
         {"character": "冷", "pinyin": "lěng", "meaning": "cold"},
         {"character": "热", "pinyin": "rè", "meaning": "hot"},
-        {"character": "高兴", "pinyin": "gāoxìng", "meaning": "happy"},
+        {"character": "高兴", "pinyin": "gāoxìng", "meaning": "happy, glad"},
         {"character": "漂亮", "pinyin": "piàoliang", "meaning": "beautiful"}
     ];
 
-    // Global States
-    let ankiQueue = [...CORE_WORDS].sort(() => Math.random() - 0.5);
-    let ankiMastered = 0;
+    // Core Flashcard State Databases
+    let srsRegistry = {}; 
+    let activeDueList = [];
+    let currentSrsCard = null;
     let ankiFlipped = false;
 
+    // Mini Modes Databases
     let learnIndex = 1;
     let learnScore = 0;
     let currentLearnCard = null;
-    let currentLearnType = ""; 
-
     let reflexTimer = null;
     let reflexTimeElapsed = 0;
     let selectedTile = null;
-    let reflexBestScore = null;
+    let reflexBestScore = localStorage.getItem('reflex_pb') || null;
 
-    // View Switching Routing Layout
+    // Initializer 
+    window.onload = function() {
+        loadSrsDatabase();
+        buildDueQueue();
+        initSrsCardLayout();
+        if(reflexBestScore) {
+            document.getElementById('reflex-highscore').innerText = `Best: ${reflexBestScore}s`;
+        }
+    };
+
+    function loadSrsDatabase() {
+        const stored = localStorage.getItem('hsk1_srs_database');
+        if (stored) {
+            srsRegistry = JSON.parse(stored);
+        } else {
+            srsRegistry = {};
+        }
+        
+        // Safety lock check: Ensure all 150 items have a data row inside registry
+        CORE_WORDS.forEach(w => {
+            if (!srsRegistry[w.character]) {
+                srsRegistry[w.character] = {
+                    reps: 0,
+                    interval: 0, 
+                    easeFactor: 2.5,
+                    nextReviewTime: 0 // Unix epoch millisecond timestamp (0 means ready immediately)
+                };
+            }
+        });
+        saveSrsToBrowserMemory();
+    }
+
+    function saveSrsToBrowserMemory() {
+        localStorage.setItem('hsk1_srs_database', JSON.stringify(srsRegistry));
+    }
+
+    function buildDueQueue() {
+        const now = Date.now();
+        activeDueList = [];
+        
+        CORE_WORDS.forEach(w => {
+            const tracking = srsRegistry[w.character];
+            if (tracking.nextReviewTime <= now) {
+                activeDueList.push(w);
+            }
+        });
+        
+        // Shuffle the due array randomly to break visual consistency
+        activeDueList.sort(() => Math.random() - 0.5);
+    }
+
+    function initSrsCardLayout() {
+        const totalMastered = Object.values(srsRegistry).filter(v => v.interval >= 7).length;
+        document.getElementById('fc-mastered').innerText = `Long Term: ${totalMastered}/150`;
+
+        if (activeDueList.length === 0) {
+            document.getElementById('fc-count').innerText = "Due Cards: 0";
+            document.getElementById('fc-front-text').innerText = "🎉 Clean!";
+            document.getElementById('fc-back-pinyin').innerText = "Done For Now";
+            document.getElementById('fc-back-meaning').innerText = "Your scheduled items are clear. Come back later!";
+            document.getElementById('fc-reveal-btn').setAttribute("disabled", "true");
+            currentSrsCard = null;
+            return;
+        }
+
+        document.getElementById('fc-reveal-btn').removeAttribute("disabled");
+        document.getElementById('fc-count').innerText = `Due Cards: ${activeDueList.length}`;
+        
+        currentSrsCard = activeDueList[0];
+        document.getElementById('fc-front-text').innerText = currentSrsCard.character;
+        document.getElementById('fc-back-pinyin').innerText = currentSrsCard.pinyin;
+        document.getElementById('fc-back-meaning').innerText = currentSrsCard.meaning;
+    }
+
+    function flipFlashcard() {
+        if (ankiFlipped || !currentSrsCard) return;
+        ankiFlipped = true;
+        document.getElementById('flashcardObj').classList.add('flipped');
+        document.getElementById('fc-reveal-btn').style.display = 'none';
+        document.getElementById('fc-controls').style.display = 'grid';
+    }
+
+    // Official SM-2 Active Recall Spaced Repetition Core Engine
+    function processSRS(qualityScore) {
+        ankiFlipped = false;
+        document.getElementById('flashcardObj').classList.remove('flipped');
+        document.getElementById('fc-reveal-btn').style.display = 'block';
+        document.getElementById('fc-controls').style.display = 'none';
+
+        setTimeout(() => {
+            const charKey = currentSrsCard.character;
+            let record = srsRegistry[charKey];
+
+            // SM-2 Computational Rules
+            if (qualityScore < 3) {
+                record.reps = 0;
+                record.interval = 0; // Trigger review immediately next generation sequence
+            } else {
+                if (record.reps === 0) {
+                    record.interval = 0.01; // Review in under ~15 minutes if first setup
+                } else if (record.reps === 1) {
+                    record.interval = 1; // 1 Day interval boundary
+                } else if (record.reps === 2) {
+                    record.interval = 4; // 4 Day interval leap
+                } else {
+                    record.interval = Math.round(record.interval * record.easeFactor);
+                }
+                record.reps += 1;
+            }
+
+            // Recalculate human ease metrics
+            record.easeFactor = record.easeFactor + (0.1 - (5 - qualityScore) * (0.08 + (5 - qualityScore) * 0.02));
+            if (record.easeFactor < 1.3) record.easeFactor = 1.3;
+
+            // Compute precision review target boundary (Interval maps explicitly to full metric days)
+            const addedMilliseconds = record.interval * 24 * 60 * 60 * 1000;
+            record.nextReviewTime = Date.now() + addedMilliseconds;
+
+            srsRegistry[charKey] = record;
+            saveSrsToBrowserMemory();
+            hideNotification();
+
+            // Rebuild pipeline track matrix
+            buildDueQueue();
+            initSrsCardLayout();
+        }, 250);
+    }
+
+    function resetAllSrsData() {
+        if(confirm("Are you sure you want to completely erase your saved review history points and restart from zero?")) {
+            localStorage.removeItem('hsk1_srs_database');
+            loadSrsDatabase();
+            buildDueQueue();
+            initSrsCardLayout();
+            showNotification("Memory storage database purged successfully.", true);
+        }
+    }
+
     function switchView(view) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
@@ -367,12 +504,11 @@
         event.target.classList.add('active');
         document.getElementById(`view-${view}`).classList.add('active');
 
-        if (view === 'flashcard') initAnkiCard();
+        if (view === 'flashcard') { buildDueQueue(); initSrsCardLayout(); }
         if (view === 'learn') initLearnQuiz();
         if (view === 'reflex') resetReflexView();
     }
 
-    // Non-blocking Inline Alert Notification Apparat
     function showNotification(text, isCorrect) {
         const banner = document.getElementById('feedbackBanner');
         banner.innerText = text;
@@ -383,231 +519,99 @@
         document.getElementById('feedbackBanner').style.display = 'none';
     }
 
-    // ================= MODE 1: FLASHCARD MECHANICS =================
-    function initAnkiCard() {
-        if (ankiQueue.length === 0) {
-            showNotification("🎉 All 150 words mastered! Re-shuffling!", true);
-            ankiQueue = [...CORE_WORDS].sort(() => Math.random() - 0.5);
-            ankiMastered = 0;
-        }
-        ankiFlipped = false;
-        const current = ankiQueue[0];
-        document.getElementById('fc-front-text').innerText = current.character;
-        document.getElementById('fc-back-pinyin').innerText = current.pinyin;
-        document.getElementById('fc-back-meaning').innerText = current.meaning;
-
-        document.getElementById('flashcardObj').classList.remove('flipped');
-        document.getElementById('fc-reveal-btn').style.display = 'block';
-        document.getElementById('fc-controls').style.display = 'none';
-
-        document.getElementById('fc-count').innerText = `Active Queue: ${ankiQueue.length}`;
-        document.getElementById('fc-mastered').innerText = `Mastered: ${ankiMastered}/150`;
-    }
-
-    function flipFlashcard() {
-        if (ankiFlipped) return;
-        ankiFlipped = true;
-        document.getElementById('flashcardObj').classList.add('flipped');
-        document.getElementById('fc-reveal-btn').style.display = 'none';
-        document.getElementById('fc-controls').style.display = 'grid';
-    }
-
-    function processAnki(rating) {
-        const currentCard = ankiQueue.shift();
-        if (rating === 'again') {
-            ankiQueue.splice(Math.min(2, ankiQueue.length), 0, currentCard);
-        } else if (rating === 'hard') {
-            ankiQueue.splice(Math.floor(ankiQueue.length * 0.3), 0, currentCard);
-        } else if (rating === 'good') {
-            ankiQueue.splice(Math.floor(ankiQueue.length * 0.7), 0, currentCard);
-        } else if (rating === 'easy') {
-            ankiMastered++;
-        }
-        hideNotification();
-        initAnkiCard();
-    }
-
-    // ================= MODE 2: CREATIVE LEARN MECHANICS =================
-    function initLearnQuiz() {
-        learnIndex = 1;
-        learnScore = 0;
-        loadLearnQuestion();
-    }
-
+    // Learn Mode Modules
+    function initLearnQuiz() { learnIndex = 1; learnScore = 0; loadLearnQuestion(); }
     function loadLearnQuestion() {
         if (learnIndex > 10) {
             showNotification(`🎯 Session Complete! Points: ${learnScore}/10`, true);
             initLearnQuiz();
             return;
         }
-
         document.getElementById('learn-progress').innerText = `Question: ${learnIndex}/10`;
         document.getElementById('learn-score').innerText = `Points: ${learnScore}`;
-
         currentLearnCard = CORE_WORDS[Math.floor(Math.random() * CORE_WORDS.length)];
-        
-        // Randomize question formats: 0 = Multi-choice, 1 = Meaning matching, 2 = Reverse Definition Check
         const randomMode = Math.floor(Math.random() * 3);
-        const isOneChar = currentLearnCard.character.replace(/\s*\(.*?\)\s*/g, "").length === 1;
+        const isOneChar = currentLearnCard.character.length === 1;
 
         if (randomMode === 0 || isOneChar) {
-            // FORCE STRICT PINYIN FILTER LOGIC:
-            // 1 character question -> Option answers must strictly contain exactly 1 pinyin string item.
-            // 2+ character question -> Option answers must strictly contain exactly 2 pinyin items.
-            currentLearnType = "PINYIN_MATCH";
             document.getElementById('learn-type-lbl').innerText = "Identify Pinyin Representation";
             document.getElementById('learn-question-display').innerText = currentLearnCard.character;
             generateLearnOptions("pinyin", isOneChar);
         } else if (randomMode === 1) {
-            currentLearnType = "MEANING_MATCH";
             document.getElementById('learn-type-lbl').innerText = "What does this target translate to?";
             document.getElementById('learn-question-display').innerText = currentLearnCard.character;
             generateLearnOptions("meaning", null);
         } else {
-            currentLearnType = "REVERSE_CHAR";
             document.getElementById('learn-type-lbl').innerText = "Find the matching Hanzi character";
             document.getElementById('learn-question-display').innerText = `${currentLearnCard.pinyin} (${currentLearnCard.meaning})`;
             generateLearnOptions("character", null);
         }
     }
-
     function generateLearnOptions(fieldKey, forceOneCharPinyin) {
         let options = [currentLearnCard];
-
         while (options.length < 4) {
             let candidate = CORE_WORDS[Math.floor(Math.random() * CORE_WORDS.length)];
-            
-            // Apply filtering validation matrix to enforce strict balance
             if (forceOneCharPinyin !== null && fieldKey === "pinyin") {
-                const candidateLen = candidate.character.replace(/\s*\(.*?\)\s*/g, "").length === 1;
-                if (candidateLen !== forceOneCharPinyin) continue; 
+                if ((candidate.character.length === 1) !== forceOneCharPinyin) continue; 
             }
-
-            if (!options.some(o => o.character === candidate.character)) {
-                options.push(candidate);
-            }
+            if (!options.some(o => o.character === candidate.character)) options.push(candidate);
         }
-
         options.sort(() => Math.random() - 0.5);
         const container = document.getElementById('learn-options-container');
         container.innerHTML = "";
-
         options.forEach(opt => {
-            let displayValue = opt[fieldKey];
-            container.innerHTML += `<button class="option-btn" onclick="checkLearnAnswer('${opt.character}')">${displayValue}</button>`;
+            container.innerHTML += `<button class="option-btn" onclick="checkLearnAnswer('${opt.character}')">${opt[fieldKey]}</button>`;
         });
     }
-
     function checkLearnAnswer(selectedChar) {
-        if (selectedChar === currentLearnCard.character) {
-            learnScore++;
-            showNotification("✓ Correct Answer!", true);
-        } else {
-            showNotification(`❌ Incorrect. Correct row: ${currentLearnCard.character} -> ${currentLearnCard.pinyin} [${currentLearnCard.meaning}]`, false);
-        }
-        learnIndex++;
-        loadLearnQuestion();
+        if (selectedChar === currentLearnCard.character) { learnScore++; showNotification("✓ Correct Answer!", true); } 
+        else { showNotification(`❌ Incorrect. Answer was: ${currentLearnCard.character} -> ${currentLearnCard.pinyin}`, false); }
+        learnIndex++; loadLearnQuestion();
     }
 
-    // ================= MODE 3: REFLEX MATCHING MODULE =================
-    function resetReflexView() {
-        clearInterval(reflexTimer);
-        document.getElementById('reflex-start-screen').style.display = "block";
-        document.getElementById('reflex-board').style.display = "none";
-        document.getElementById('reflex-timer').innerText = "Timer: 0.0s";
-    }
-
+    // Reflex Matching Modules
+    function resetReflexView() { clearInterval(reflexTimer); document.getElementById('reflex-start-screen').style.display = "block"; document.getElementById('reflex-board').style.display = "none"; document.getElementById('reflex-timer').innerText = "Timer: 0.0s"; }
     function startReflexGame() {
         document.getElementById('reflex-start-screen').style.display = "none";
-        const board = document.getElementById('reflex-board');
-        board.innerHTML = "";
-        board.style.display = "grid";
-
-        // Draw 4 random words for matching session
-        let selectedWords = [];
-        let pool = [...CORE_WORDS].sort(() => Math.random() - 0.5);
+        const board = document.getElementById('reflex-board'); board.innerHTML = ""; board.style.display = "grid";
+        let selectedWords = []; let pool = [...CORE_WORDS].sort(() => Math.random() - 0.5);
         for(let i=0; i<4; i++) { selectedWords.push(pool[i]); }
-
         let tiles = [];
         selectedWords.forEach(w => {
             tiles.push({ id: w.character, text: w.character, type: 'char' });
-            // Alternate mixing Pinyin vs English variants to push cognitive reaction speeds
-            if(Math.random() > 0.5) {
-                tiles.push({ id: w.character, text: w.pinyin, type: 'match' });
-            } else {
-                tiles.push({ id: w.character, text: w.meaning, type: 'match' });
-            }
+            if(Math.random() > 0.5) tiles.push({ id: w.character, text: w.pinyin, type: 'match' });
+            else tiles.push({ id: w.character, text: w.meaning, type: 'match' });
         });
-
         tiles.sort(() => Math.random() - 0.5);
         tiles.forEach(t => {
-            const el = document.createElement('div');
-            el.className = 'tile';
-            el.innerText = t.text;
-            el.dataset.id = t.id;
-            el.dataset.type = t.type;
-            el.onclick = () => handleTileClick(el);
-            board.appendChild(el);
+            const el = document.createElement('div'); el.className = 'tile'; el.innerText = t.text; el.dataset.id = t.id; el.dataset.type = t.type; el.onclick = () => handleTileClick(el); board.appendChild(el);
         });
-
-        reflexTimeElapsed = 0;
-        clearInterval(reflexTimer);
-        reflexTimer = setInterval(() => {
-            reflexTimeElapsed += 0.1;
-            document.getElementById('reflex-timer').innerText = `Timer: ${reflexTimeElapsed.toFixed(1)}s`;
-        }, 100);
+        reflexTimeElapsed = 0; clearInterval(reflexTimer);
+        reflexTimer = setInterval(() => { reflexTimeElapsed += 0.1; document.getElementById('reflex-timer').innerText = `Timer: ${reflexTimeElapsed.toFixed(1)}s`; }, 100);
     }
-
     function handleTileClick(tile) {
         if (tile.classList.contains('matched')) return;
-        
-        // Deselect cell click toggling pattern
-        if (selectedTile === tile) {
-            tile.classList.remove('selected');
-            selectedTile = null;
-            return;
-        }
-
-        // Clean previous error visualization classes if any remain
+        if (selectedTile === tile) { tile.classList.remove('selected'); selectedTile = null; return; }
         document.querySelectorAll('.tile.wrong').forEach(t => t.classList.remove('wrong'));
-
-        if (!selectedTile) {
-            selectedTile = tile;
-            tile.classList.add('selected');
-        } else {
-            // Evaluate pairing equality conditions
+        if (!selectedTile) { selectedTile = tile; tile.classList.add('selected'); } else {
             if (selectedTile.dataset.id === tile.dataset.id && selectedTile.dataset.type !== tile.dataset.type) {
-                selectedTile.classList.add('matched');
-                tile.classList.add('matched');
-                selectedTile = null;
-                checkReflexWinCondition();
+                selectedTile.classList.add('matched'); tile.classList.add('matched'); selectedTile = null; checkReflexWinCondition();
             } else {
-                selectedTile.classList.remove('selected');
-                selectedTile.classList.add('wrong');
-                tile.classList.add('wrong');
-                selectedTile = null;
+                selectedTile.classList.remove('selected'); selectedTile.classList.add('wrong'); tile.classList.add('wrong'); selectedTile = null;
             }
         }
     }
-
     function checkReflexWinCondition() {
         const remaining = document.querySelectorAll('.tile:not(.matched)');
         if (remaining.length === 0) {
-            clearInterval(reflexTimer);
-            const score = reflexTimeElapsed.toFixed(1);
-            
+            clearInterval(reflexTimer); const score = reflexTimeElapsed.toFixed(1);
             if (!reflexBestScore || parseFloat(score) < parseFloat(reflexBestScore)) {
-                reflexBestScore = score;
+                reflexBestScore = score; localStorage.setItem('reflex_pb', score);
                 document.getElementById('reflex-highscore').innerText = `Best: ${reflexBestScore}s`;
             }
-            showNotification(`⚡ Finished in ${score}s!`, true);
-            resetReflexView();
+            showNotification(`⚡ Finished in ${score}s!`, true); resetReflexView();
         }
     }
-
-    // Core ignition sequence configuration
-    initAnkiCard();
 </script>
 </body>
 </html>
-
