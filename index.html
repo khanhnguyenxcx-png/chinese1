@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSK 1 Ultimate Mastery Suite</title>
+    <style>
+        :root {
+            --primary: #3498db;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #f4f4f9;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--light);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 650px;
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            box-sizing: border-box;
+            position: relative;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            background: #e0e0e0;
+            color: #666;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+        
+        .stats-panel {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: var(--dark);
+        }
+
+        /* Feedback Toast Notification */
+        .feedback-banner {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+        .feedback-correct { background-color: #d4edda; color: #155724; }
+        .feedback-wrong { background-color: #f8d7da; color: #721c24; }
+
+        /* Mode 1: Flashcard Style (Anki) */
+        .card-wrapper { perspective: 1000px; height: 230px; margin-bottom: 20px; }
+        .flashcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.4s ease; cursor: pointer; }
+        .flashcard.flipped { transform: rotateY(180deg); }
+        .card-side { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border: 2px solid #e0e0e0; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; background: white; }
+        .card-back { transform: rotateY(180deg); border-color: var(--primary); }
+        .text-char { font-size: 56px; font-weight: bold; color: var(--dark); margin: 0; }
+        .text-pinyin { font-size: 32px; font-weight: bold; color: #e67e22; margin: 0 0 10px 0; }
+        .text-meaning { font-size: 18px; color: #7f8c8d; margin: 0; text-align: center; }
+        .text-hint { font-size: 11px; color: #b2bec3; position: absolute; bottom: 12px; }
+        
+        .btn { padding: 12px 20px; font-size: 15px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: opacity 0.2s; }
+        .btn:hover { opacity: 0.9; }
+        .btn-main { width: 100%; background: var(--primary); color: white; }
+        .anki-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .btn-again { background: var(--danger); color: white; }
+        .btn-hard { background: var(--warning); color: var(--dark); }
+        .btn-good { background: var(--primary); color: white; }
+        .btn-easy { background: var(--success); color: white; }
+
+        /* Mode 2: Creative Learn Engine */
+        .question-box { background: #f8f9fa; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #e9ecef; }
+        .q-type-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #95a5a6; font-weight: bold; margin-bottom: 5px; }
+        .q-main { font-size: 42px; font-weight: bold; color: var(--dark); margin: 10px 0; }
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .option-btn { background: white; border: 2px solid #e0e0e0; padding: 14px; border-radius: 8px; font-size: 16px; cursor: pointer; text-align: left; transition: all 0.2s; }
+        .option-btn:hover { border-color: var(--primary); background: #f0f7fc; }
+
+        /* Mode 3: Reflex Matching System */
+        .reflex-intro { text-align: center; padding: 20px; }
+        .grid-reflex { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        .tile { background: white; border: 2px solid #cbd5e1; border-radius: 8px; padding: 15px 5px; text-align: center; font-size: 16px; font-weight: 600; cursor: pointer; user-select: none; transition: all 0.2s; min-height: 50px; display: flex; align-items: center; justify-content: center; word-break: break-word; }
+        .tile.selected { border-color: var(--primary); background-color: #e0f2fe; color: #0369a1; }
+        .tile.matched { visibility: hidden; opacity: 0; pointer-events: none; }
+        .tile.wrong { border-color: var(--danger); background-color: #fee2e2; animation: shake 0.3s ease; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchView('flashcard')">Flashcard (Anki)</button>
+        <button class="tab-btn" onclick="switchView('learn')">Learn Mode</button>
+        <button class="tab-btn" onclick="switchView('reflex')">Reflex Mode</button>
+    </div>
+
+    <!-- Banner for non-blocking alerts -->
+    <div class="feedback-banner" id="feedbackBanner"></div>
+
+    <!-- MODE 1: FLASHCARD (ANKI) -->
+    <div id="view-flashcard" class="view-section active">
+        <div class="stats-panel">
+            <span id="fc-count">Active Cards: --</span>
+            <span id="fc-mastered" style="color: var(--success)">Mastered: 0/150</span>
+        </div>
+        <div class="card-wrapper" onclick="flipFlashcard()">
+            <div class="flashcard" id="flashcardObj">
+                <div class="card-side card-front">
+                    <p class="text-char" id="fc-front-text">我</p>
+                    <span class="text-hint">Click card back layout to flip</span>
+                </div>
+                <div class="card-side card-back">
+                    <p class="text-pinyin" id="fc-back-pinyin">wǒ</p>
+                    <p class="text-meaning" id="fc-back-meaning">I, me</p>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-main" id="fc-reveal-btn" onclick="flipFlashcard()">Reveal Answer</button>
+        <div class="anki-grid" id="fc-controls" style="display: none;">
+            <button class="btn btn-again" onclick="processAnki('again')">No Good</button>
+            <button class="btn btn-hard" onclick="processAnki('hard')">Hard</button>
+            <button class="btn btn-good" onclick="processAnki('good')">Good</button>
+            <button class="btn btn-easy" onclick="processAnki('easy')">Very Good</button>
+        </div>
+    </div>
+
+    <!-- MODE 2: LEARN MODE (CREATIVE ENGINE) -->
+    <div id="view-learn" class="view-section">
+        <div class="stats-panel">
+            <span id="learn-progress">Question: 1/10</span>
+            <span id="learn-score" style="color: var(--primary)">Points: 0</span>
+        </div>
+        <div class="question-box">
+            <div class="q-type-label" id="learn-type-lbl">Identify Translation</div>
+            <div class="q-main" id="learn-question-display">...</div>
+        </div>
+        <div class="options-grid" id="learn-options-container"></div>
+    </div>
+
+    <!-- MODE 3: REFLEX MATCHING MODE -->
+    <div id="view-reflex" class="view-section">
+        <div class="stats-panel">
+            <span id="reflex-timer" style="color: var(--danger)">Timer: 0.0s</span>
+            <span id="reflex-highscore">Best: --</span>
+        </div>
+        <div class="reflex-intro" id="reflex-start-screen">
+            <h3>Reflex Match Challenge</h3>
+            <p>Match Character tokens with their matching Pinyin or English meaning targets as fast as possible!</p>
+            <button class="btn btn-main" onclick="startReflexGame()">Start Game Loop</button>
+        </div>
+        <div class="grid-reflex" id="reflex-board" style="display: none;"></div>
+    </div>
+</div>
+
+<script>
+    // Core Vocabulary List
+    const CORE_WORDS = [
+        {"character": "我", "pinyin": "wǒ", "meaning": "I, me"},
+        {"character": "我们", "pinyin": "wǒmen", "meaning": "we, us (pl.)"},
+        {"character": "你", "pinyin": "nǐ", "meaning": "you"},
+        {"character": "他", "pinyin": "tā", "meaning": "he, him"},
+        {"character": "她", "pinyin": "tā", "meaning": "she, her"},
+        {"character": "这 (这儿)", "pinyin": "zhè (zhèr)", "meaning": "this (here)"},
+        {"character": "那 (那儿)", "pinyin": "nà (nàr)", "meaning": "that (there)"},
+        {"character": "哪", "pinyin": "nǎ", "meaning": "which"},
+        {"character": "哪儿", "pinyin": "nǎr", "meaning": "where"},
+        {"character": "谁", "pinyin": "shéi", "meaning": "who"},
+        {"character": "什么", "pinyin": "shénme", "meaning": "what, why"},
+        {"character": "多少", "pinyin": "duōshǎo", "meaning": "how many, how much"},
+        {"character": "几", "pinyin": "jǐ", "meaning": "a few, how many"},
+        {"character": "怎么", "pinyin": "zěnme", "meaning": "how"},
+        {"character": "怎么样", "pinyin": "zěnmeyàng", "meaning": "how about"},
+        {"character": "一", "pinyin": "yī", "meaning": "one"},
+        {"character": "二", "pinyin": "èr", "meaning": "two"},
+        {"character": "三", "pinyin": "sān", "meaning": "three"},
+        {"character": "四", "pinyin": "sì", "meaning": "four"},
+        {"character": "五", "pinyin": "wǔ", "meaning": "five"},
+        {"character": "六", "pinyin": "liù", "meaning": "six"},
+        {"character": "七", "pinyin": "qī", "meaning": "seven"},
+        {"character": "八", "pinyin": "bā", "meaning": "eight"},
+        {"character": "九", "pinyin": "jiǔ", "meaning": "nine"},
+        {"character": "十", "pinyin": "shí", "meaning": "ten"},
+        {"character": "个", "pinyin": "gè", "meaning": "(for normal objects)"},
+        {"character": "岁", "pinyin": "suì", "meaning": "(for age)"},
+        {"character": "本", "pinyin": "běn", "meaning": "(for books)"},
+        {"character": "些", "pinyin": "xiē", "meaning": "some"},
+        {"character": "块", "pinyin": "kuài", "meaning": "piece, chunk"},
+        {"character": "不", "pinyin": "bù", "meaning": "no"},
+        {"character": "没", "pinyin": "méi", "meaning": "no"},
+        {"character": "很", "pinyin": "hěn", "meaning": "quite, very"},
+        {"character": "太", "pinyin": "tài", "meaning": "too"},
+        {"character": "都", "pinyin": "dōu", "meaning": "all"},
+        {"character": "一点儿", "pinyin": "yīdiǎnr", "meaning": "a little bit"},
+        {"character": "和", "pinyin": "hé", "meaning": "and"},
+        {"character": "在", "pinyin": "zài", "meaning": "in, at"},
+        {"character": "的", "pinyin": "de", "meaning": "possessive particle"},
+        {"character": "了", "pinyin": "le", "meaning": "completed action particle"},
+        {"character": "吗", "pinyin": "ma", "meaning": "question particle"},
+        {"character": "呢", "pinyin": "ne", "meaning": "modal particle"},
+        {"character": "喂", "pinyin": "wèi", "meaning": "hello"},
+        {"character": "家", "pinyin": "jiā", "meaning": "home"},
+        {"character": "学校", "pinyin": "xuéxiào", "meaning": "school"},
+        {"character": "饭店", "pinyin": "fàndiàn", "meaning": "restaurant"},
+        {"character": "商店", "pinyin": "shāngdiàn", "meaning": "store"},
+        {"character": "医院", "pinyin": "yīyuàn", "meaning": "hospital"},
+        {"character": "中国", "pinyin": "Zhōngguó", "meaning": "China"},
+        {"character": "北京", "pinyin": "Běijīng", "meaning": "Beijing"},
+        {"character": "上", "pinyin": "shàng", "meaning": "up"},
+        {"character": "下", "pinyin": "xià", "meaning": "down"},
+        {"character": "前面", "pinyin": "qiánmiàn", "meaning": "front"},
+        {"character": "后面", "pinyin": "hòumiàn", "meaning": "behind"},
+        {"character": "里面", "pinyin": "lǐmiàn", "meaning": "inside"},
+        {"character": "今天", "pinyin": "jīntiān", "meaning": "today"},
+        {"character": "明天", "pinyin": "míngtiān", "meaning": "tomorrow"},
+        {"character": "昨天", "pinyin": "zuótiān", "meaning": "yesterday"},
+        {"character": "上午", "pinyin": "shàngwǔ", "meaning": "morning"},
+        {"character": "中午", "pinyin": "zhōngwǔ", "meaning": "noon"},
+        {"character": "下午", "pinyin": "xiàwǔ", "meaning": "afternoon"},
+        {"character": "年", "pinyin": "nián", "meaning": "year"},
+        {"character": "月", "pinyin": "yuè", "meaning": "month"},
+        {"character": "号", "pinyin": "hào", "meaning": "number/date"},
+        {"character": "星期", "pinyin": "xīngqī", "meaning": "week"},
+        {"character": "点", "pinyin": "diǎn", "meaning": "o’clock"},
+        {"character": "分钟", "pinyin": "fēnzhōng", "meaning": "minute"},
+        {"character": "现在", "pinyin": "xiànzài", "meaning": "now"},
+        {"character": "时候", "pinyin": "shíhou", "meaning": "time"},
+        {"character": "爸爸", "pinyin": "bàba", "meaning": "father"},
+        {"character": "妈妈", "pinyin": "māma", "meaning": "mother"},
+        {"character": "儿子", "pinyin": "érzi", "meaning": "son"},
+        {"character": "女儿", "pinyin": "nǚ'ér", "meaning": "daughter"},
+        {"character": "老师", "pinyin": "lǎoshī", "meaning": "teacher"},
+        {"character": "学生", "pinyin": "xuéshēng", "meaning": "student"},
+        {"character": "同学", "pinyin": "tóngxué", "meaning": "classmate"},
+        {"character": "朋友", "pinyin": "péngyou", "meaning": "friend"},
+        {"character": "医生", "pinyin": "yīshēng", "meaning": "doctor"},
+        {"character": "先生", "pinyin": "xiānsheng", "meaning": "sir"},
+        {"character": "小姐", "pinyin": "xiǎojiě", "meaning": "Miss"},
+        {"character": "衣服", "pinyin": "yīfu", "meaning": "cloth"},
+        {"character": "水", "pinyin": "shuǐ", "meaning": "water"},
+        {"character": "菜", "pinyin": "cài", "meaning": "dish"},
+        {"character": "米饭", "pinyin": "mǐfàn", "meaning": "rice"},
+        {"character": "水果", "pinyin": "shuǐguǒ", "meaning": "fruit"},
+        {"character": "苹果", "pinyin": "píngguǒ", "meaning": "apple"},
+        {"character": "茶", "pinyin": "chá", "meaning": "tea"},
+        {"character": "杯子", "pinyin": "bēizi", "meaning": "cup"},
+        {"character": "钱", "pinyin": "qián", "meaning": "money"},
+        {"character": "飞机", "pinyin": "fēijī", "meaning": "airplane"},
+        {"character": "出租车", "pinyin": "chūzūchē", "meaning": "taxi"},
+        {"character": "电视", "pinyin": "diànshì", "meaning": "television"},
+        {"character": "电脑", "pinyin": "diànnǎo", "meaning": "computer"},
+        {"character": "电影", "pinyin": "diànyǐng", "meaning": "movie"},
+        {"character": "天气", "pinyin": "tiānqì", "meaning": "weather"},
+        {"character": "猫", "pinyin": "māo", "meaning": "cat"},
+        {"character": "狗", "pinyin": "gǒu", "meaning": "dog"},
+        {"character": "东西", "pinyin": "dōngxi", "meaning": "thing"},
+        {"character": "人", "pinyin": "rén", "meaning": "person"},
+        {"character": "名字", "pinyin": "míngzi", "meaning": "name"},
+        {"character": "书", "pinyin": "shū", "meaning": "book"},
+        {"character": "汉语", "pinyin": "hànyǔ", "meaning": "mandarin Chinese"},
+        {"character": "字", "pinyin": "zì", "meaning": "character"},
+        {"character": "桌子", "pinyin": "zhuōzi", "meaning": "desk"},
+        {"character": "椅子", "pinyin": "yǐzi", "meaning": "chair"},
+        {"character": "谢谢", "pinyin": "xièxie", "meaning": "thank"},
+        {"character": "不客气", "pinyin": "búkèqì", "meaning": "you are welcome"},
+        {"character": "再见", "pinyin": "zàijiàn", "meaning": "good-bye"},
+        {"character": "请", "pinyin": "qǐng", "meaning": "please"},
+        {"character": "对不起", "pinyin": "duìbùqǐ", "meaning": "sorry"},
+        {"character": "没关系", "pinyin": "méiguānxì", "meaning": "It doesn’t matter"},
+        {"character": "是", "pinyin": "shì", "meaning": "be (am, is, are)"},
+        {"character": "有", "pinyin": "yǒu", "meaning": "have"},
+        {"character": "看", "pinyin": "kàn", "meaning": "look"},
+        {"character": "听", "pinyin": "tīng", "meaning": "listen"},
+        {"character": "说", "pinyin": "shuō", "meaning": "speak"},
+        {"character": "读", "pinyin": "dú", "meaning": "read"},
+        {"character": "写", "pinyin": "xiě", "meaning": "write"},
+        {"character": "看见", "pinyin": "kànjiàn", "meaning": "see"},
+        {"character": "叫", "pinyin": "jiào", "meaning": "call"},
+        {"character": "来", "pinyin": "lái", "meaning": "come"},
+        {"character": "回", "pinyin": "huí", "meaning": "return"},
+        {"character": "去", "pinyin": "qù", "meaning": "go"},
+        {"character": "吃", "pinyin": "chī", "meaning": "eat"},
+        {"character": "喝", "pinyin": "hē", "meaning": "drink"},
+        {"character": "睡觉", "pinyin": "shuìjiào", "meaning": "sleep"},
+        {"character": "打电话", "pinyin": "dǎdiànhuà", "meaning": "make phone call"},
+        {"character": "做", "pinyin": "zuò", "meaning": "do"},
+        {"character": "买", "pinyin": "mǎi", "meaning": "buy"},
+        {"character": "开", "pinyin": "kāi", "meaning": "open"},
+        {"character": "坐", "pinyin": "zuò", "meaning": "sit"},
+        {"character": "住", "pinyin": "zhù", "meaning": "live"},
+        {"character": "学习", "pinyin": "xuéxí", "meaning": "study"},
+        {"character": "工作", "pinyin": "gōngzuò", "meaning": "work"},
+        {"character": "下雨", "pinyin": "xiàyǔ", "meaning": "rain"},
+        {"character": "爱", "pinyin": "ài", "meaning": "love"},
+        {"character": "喜欢", "pinyin": "xǐhuan", "meaning": "love, like"},
+        {"character": "想", "pinyin": "xiǎng", "meaning": "want"},
+        {"character": "认识", "pinyin": "rènshi", "meaning": "know"},
+        {"character": "会", "pinyin": "huì", "meaning": "can"},
+        {"character": "能", "pinyin": "néng", "meaning": "can, be able to"},
+        {"character": "好", "pinyin": "hǎo", "meaning": "good"},
+        {"character": "大", "pinyin": "dà", "meaning": "big"},
+        {"character": "小", "pinyin": "xiǎo", "meaning": "small"},
+        {"character": "多", "pinyin": "duō", "meaning": "many, much"},
+        {"character": "少", "pinyin": "shǎo", "meaning": "few, little"},
+        {"character": "冷", "pinyin": "lěng", "meaning": "cold"},
+        {"character": "热", "pinyin": "rè", "meaning": "hot"},
+        {"character": "高兴", "pinyin": "gāoxìng", "meaning": "happy"},
+        {"character": "漂亮", "pinyin": "piàoliang", "meaning": "beautiful"}
+    ];
+
+    // Global States
+    let ankiQueue = [...CORE_WORDS].sort(() => Math.random() - 0.5);
+    let ankiMastered = 0;
+    let ankiFlipped = false;
+
+    let learnIndex = 1;
+    let learnScore = 0;
+    let currentLearnCard = null;
+    let currentLearnType = ""; 
+
+    let reflexTimer = null;
+    let reflexTimeElapsed = 0;
+    let selectedTile = null;
+    let reflexBestScore = null;
+
+    // View Switching Routing Layout
+    function switchView(view) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+        hideNotification();
+        
+        event.target.classList.add('active');
+        document.getElementById(`view-${view}`).classList.add('active');
+
+        if (view === 'flashcard') initAnkiCard();
+        if (view === 'learn') initLearnQuiz();
+        if (view === 'reflex') resetReflexView();
+    }
+
+    // Non-blocking Inline Alert Notification Apparat
+    function showNotification(text, isCorrect) {
+        const banner = document.getElementById('feedbackBanner');
+        banner.innerText = text;
+        banner.className = `feedback-banner ${isCorrect ? 'feedback-correct' : 'feedback-wrong'}`;
+        banner.style.display = 'block';
+    }
+    function hideNotification() {
+        document.getElementById('feedbackBanner').style.display = 'none';
+    }
+
+    // ================= MODE 1: FLASHCARD MECHANICS =================
+    function initAnkiCard() {
+        if (ankiQueue.length === 0) {
+            showNotification("🎉 All 150 words mastered! Re-shuffling!", true);
+            ankiQueue = [...CORE_WORDS].sort(() => Math.random() - 0.5);
+            ankiMastered = 0;
+        }
+        ankiFlipped = false;
+        const current = ankiQueue[0];
+        document.getElementById('fc-front-text').innerText = current.character;
+        document.getElementById('fc-back-pinyin').innerText = current.pinyin;
+        document.getElementById('fc-back-meaning').innerText = current.meaning;
+
+        document.getElementById('flashcardObj').classList.remove('flipped');
+        document.getElementById('fc-reveal-btn').style.display = 'block';
+        document.getElementById('fc-controls').style.display = 'none';
+
+        document.getElementById('fc-count').innerText = `Active Queue: ${ankiQueue.length}`;
+        document.getElementById('fc-mastered').innerText = `Mastered: ${ankiMastered}/150`;
+    }
+
+    function flipFlashcard() {
+        if (ankiFlipped) return;
+        ankiFlipped = true;
+        document.getElementById('flashcardObj').classList.add('flipped');
+        document.getElementById('fc-reveal-btn').style.display = 'none';
+        document.getElementById('fc-controls').style.display = 'grid';
+    }
+
+    function processAnki(rating) {
+        const currentCard = ankiQueue.shift();
+        if (rating === 'again') {
+            ankiQueue.splice(Math.min(2, ankiQueue.length), 0, currentCard);
+        } else if (rating === 'hard') {
+            ankiQueue.splice(Math.floor(ankiQueue.length * 0.3), 0, currentCard);
+        } else if (rating === 'good') {
+            ankiQueue.splice(Math.floor(ankiQueue.length * 0.7), 0, currentCard);
+        } else if (rating === 'easy') {
+            ankiMastered++;
+        }
+        hideNotification();
+        initAnkiCard();
+    }
+
+    // ================= MODE 2: CREATIVE LEARN MECHANICS =================
+    function initLearnQuiz() {
+        learnIndex = 1;
+        learnScore = 0;
+        loadLearnQuestion();
+    }
+
+    function loadLearnQuestion() {
+        if (learnIndex > 10) {
+            showNotification(`🎯 Session Complete! Points: ${learnScore}/10`, true);
+            initLearnQuiz();
+            return;
+        }
+
+        document.getElementById('learn-progress').innerText = `Question: ${learnIndex}/10`;
+        document.getElementById('learn-score').innerText = `Points: ${learnScore}`;
+
+        currentLearnCard = CORE_WORDS[Math.floor(Math.random() * CORE_WORDS.length)];
+        
+        // Randomize question formats: 0 = Multi-choice, 1 = Meaning matching, 2 = Reverse Definition Check
+        const randomMode = Math.floor(Math.random() * 3);
+        const isOneChar = currentLearnCard.character.replace(/\s*\(.*?\)\s*/g, "").length === 1;
+
+        if (randomMode === 0 || isOneChar) {
+            // FORCE STRICT PINYIN FILTER LOGIC:
+            // 1 character question -> Option answers must strictly contain exactly 1 pinyin string item.
+            // 2+ character question -> Option answers must strictly contain exactly 2 pinyin items.
+            currentLearnType = "PINYIN_MATCH";
+            document.getElementById('learn-type-lbl').innerText = "Identify Pinyin Representation";
+            document.getElementById('learn-question-display').innerText = currentLearnCard.character;
+            generateLearnOptions("pinyin", isOneChar);
+        } else if (randomMode === 1) {
+            currentLearnType = "MEANING_MATCH";
+            document.getElementById('learn-type-lbl').innerText = "What does this target translate to?";
+            document.getElementById('learn-question-display').innerText = currentLearnCard.character;
+            generateLearnOptions("meaning", null);
+        } else {
+            currentLearnType = "REVERSE_CHAR";
+            document.getElementById('learn-type-lbl').innerText = "Find the matching Hanzi character";
+            document.getElementById('learn-question-display').innerText = `${currentLearnCard.pinyin} (${currentLearnCard.meaning})`;
+            generateLearnOptions("character", null);
+        }
+    }
+
+    function generateLearnOptions(fieldKey, forceOneCharPinyin) {
+        let options = [currentLearnCard];
+
+        while (options.length < 4) {
+            let candidate = CORE_WORDS[Math.floor(Math.random() * CORE_WORDS.length)];
+            
+            // Apply filtering validation matrix to enforce strict balance
+            if (forceOneCharPinyin !== null && fieldKey === "pinyin") {
+                const candidateLen = candidate.character.replace(/\s*\(.*?\)\s*/g, "").length === 1;
+                if (candidateLen !== forceOneCharPinyin) continue; 
+            }
+
+            if (!options.some(o => o.character === candidate.character)) {
+                options.push(candidate);
+            }
+        }
+
+        options.sort(() => Math.random() - 0.5);
+        const container = document.getElementById('learn-options-container');
+        container.innerHTML = "";
+
+        options.forEach(opt => {
+            let displayValue = opt[fieldKey];
+            container.innerHTML += `<button class="option-btn" onclick="checkLearnAnswer('${opt.character}')">${displayValue}</button>`;
+        });
+    }
+
+    function checkLearnAnswer(selectedChar) {
+        if (selectedChar === currentLearnCard.character) {
+            learnScore++;
+            showNotification("✓ Correct Answer!", true);
+        } else {
+            showNotification(`❌ Incorrect. Correct row: ${currentLearnCard.character} -> ${currentLearnCard.pinyin} [${currentLearnCard.meaning}]`, false);
+        }
+        learnIndex++;
+        loadLearnQuestion();
+    }
+
+    // ================= MODE 3: REFLEX MATCHING MODULE =================
+    function resetReflexView() {
+        clearInterval(reflexTimer);
+        document.getElementById('reflex-start-screen').style.display = "block";
+        document.getElementById('reflex-board').style.display = "none";
+        document.getElementById('reflex-timer').innerText = "Timer: 0.0s";
+    }
+
+    function startReflexGame() {
+        document.getElementById('reflex-start-screen').style.display = "none";
+        const board = document.getElementById('reflex-board');
+        board.innerHTML = "";
+        board.style.display = "grid";
+
+        // Draw 4 random words for matching session
+        let selectedWords = [];
+        let pool = [...CORE_WORDS].sort(() => Math.random() - 0.5);
+        for(let i=0; i<4; i++) { selectedWords.push(pool[i]); }
+
+        let tiles = [];
+        selectedWords.forEach(w => {
+            tiles.push({ id: w.character, text: w.character, type: 'char' });
+            // Alternate mixing Pinyin vs English variants to push cognitive reaction speeds
+            if(Math.random() > 0.5) {
+                tiles.push({ id: w.character, text: w.pinyin, type: 'match' });
+            } else {
+                tiles.push({ id: w.character, text: w.meaning, type: 'match' });
+            }
+        });
+
+        tiles.sort(() => Math.random() - 0.5);
+        tiles.forEach(t => {
+            const el = document.createElement('div');
+            el.className = 'tile';
+            el.innerText = t.text;
+            el.dataset.id = t.id;
+            el.dataset.type = t.type;
+            el.onclick = () => handleTileClick(el);
+            board.appendChild(el);
+        });
+
+        reflexTimeElapsed = 0;
+        clearInterval(reflexTimer);
+        reflexTimer = setInterval(() => {
+            reflexTimeElapsed += 0.1;
+            document.getElementById('reflex-timer').innerText = `Timer: ${reflexTimeElapsed.toFixed(1)}s`;
+        }, 100);
+    }
+
+    function handleTileClick(tile) {
+        if (tile.classList.contains('matched')) return;
+        
+        // Deselect cell click toggling pattern
+        if (selectedTile === tile) {
+            tile.classList.remove('selected');
+            selectedTile = null;
+            return;
+        }
+
+        // Clean previous error visualization classes if any remain
+        document.querySelectorAll('.tile.wrong').forEach(t => t.classList.remove('wrong'));
+
+        if (!selectedTile) {
+            selectedTile = tile;
+            tile.classList.add('selected');
+        } else {
+            // Evaluate pairing equality conditions
+            if (selectedTile.dataset.id === tile.dataset.id && selectedTile.dataset.type !== tile.dataset.type) {
+                selectedTile.classList.add('matched');
+                tile.classList.add('matched');
+                selectedTile = null;
+                checkReflexWinCondition();
+            } else {
+                selectedTile.classList.remove('selected');
+                selectedTile.classList.add('wrong');
+                tile.classList.add('wrong');
+                selectedTile = null;
+            }
+        }
+    }
+
+    function checkReflexWinCondition() {
+        const remaining = document.querySelectorAll('.tile:not(.matched)');
+        if (remaining.length === 0) {
+            clearInterval(reflexTimer);
+            const score = reflexTimeElapsed.toFixed(1);
+            
+            if (!reflexBestScore || parseFloat(score) < parseFloat(reflexBestScore)) {
+                reflexBestScore = score;
+                document.getElementById('reflex-highscore').innerText = `Best: ${reflexBestScore}s`;
+            }
+            showNotification(`⚡ Finished in ${score}s!`, true);
+            resetReflexView();
+        }
+    }
+
+    // Core ignition sequence configuration
+    initAnkiCard();
+</script>
+</body>
+</html>
