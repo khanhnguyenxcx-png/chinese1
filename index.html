@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HSK 1 Spaced Repetition Suite</title>
-    <!-- Importing Calligraphy Brush Fonts directly from Google Fonts to bypass standard system font restrictions -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #3498db;
@@ -86,7 +82,7 @@
         .feedback-correct { background-color: #d4edda; color: #155724; }
         .feedback-wrong { background-color: #f8d7da; color: #721c24; }
 
-        /* Flat card styling with zero animations */
+        /* FIXED: Flat card styling with zero animations */
         .card-wrapper { height: 230px; margin-bottom: 20px; }
         .flashcard { 
             width: 100%; 
@@ -117,10 +113,10 @@
             text-align: center;
         }
 
-        /* CHANGED: Swapped standard font file fallbacks for Google Web Calligraphy Fonts */
+        /* UPDATED: Applied KaiTi (Calligraphy/Brush script style) for Chinese Characters */
         .text-char { 
-            font-family: "Ma Shan Zheng", "Zhi Mang Xing", "KaiTi", "Kaiti SC", serif;
-            font-size: 84px; /* Calligraphy fonts are fluid and narrow, upscaled for clarity */
+            font-family: "KaiTi", "Kaiti SC", "STKaiti", "AR PL UKai", "TW-Kai", serif;
+            font-size: 72px; /* Marginally scaled up as Kaiti tends to look slightly thinner than generic bold sans-serif */
             font-weight: normal; 
             color: var(--dark); 
             margin: 0; 
@@ -141,23 +137,23 @@
         .question-box { background: #f8f9fa; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #e9ecef; }
         .q-type-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #95a5a6; font-weight: bold; margin-bottom: 5px; }
         
-        /* Applied calligraphy setup for Learn mode questions */
+        /* UPDATED: Added Kaiti stack here as well for Learn mode questions */
         .q-main { 
-            font-family: "Ma Shan Zheng", "Zhi Mang Xing", "KaiTi", serif;
-            font-size: 68px; 
+            font-family: "KaiTi", "Kaiti SC", "STKaiti", "AR PL UKai", serif;
+            font-size: 56px; 
             color: var(--dark); 
             margin: 10px 0; 
         }
         .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         
-        /* Calligraphy styling applied directly to multiple-choice answers */
+        /* UPDATED: Added Kaiti stack to option choices if they feature Hanzi characters */
         .option-btn { 
-            font-family: "Ma Shan Zheng", "Zhi Mang Xing", "KaiTi", -apple-system, sans-serif;
+            font-family: "KaiTi", "Kaiti SC", "STKaiti", -apple-system, sans-serif;
             background: white; 
             border: 2px solid #e0e0e0; 
             padding: 14px; 
             border-radius: 8px; 
-            font-size: 24px; 
+            font-size: 20px; 
             cursor: pointer; 
             text-align: left; 
             transition: all 0.2s; 
@@ -167,15 +163,15 @@
         .reflex-intro { text-align: center; padding: 20px; }
         .grid-reflex { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
         
-        /* Calligraphy styling for gaming token target arrays */
+        /* UPDATED: Added Kaiti stack to gaming target grid tokens */
         .tile { 
-            font-family: "Ma Shan Zheng", "Zhi Mang Xing", "KaiTi", -apple-system, sans-serif;
+            font-family: "KaiTi", "Kaiti SC", "STKaiti", -apple-system, sans-serif;
             background: white; 
             border: 2px solid #cbd5e1; 
             border-radius: 8px; 
             padding: 15px 5px; 
             text-align: center; 
-            font-size: 24px; 
+            font-size: 20px; 
             font-weight: 600; 
             cursor: pointer; 
             user-select: none; 
@@ -317,7 +313,7 @@
         {"character": "前面", "pinyin": "qiánmiàn", "meaning": "front, ahead"},
         {"character": "后面", "pinyin": "hòumiàn", "meaning": "behind, rear"},
         {"character": "里面", "pinyin": "lǐmiàn", "meaning": "inside"},
-        {"character": "today", "pinyin": "jīntiān", "meaning": "today"},
+        {"character": "今天", "pinyin": "jīntiān", "meaning": "today"},
         {"character": "明天", "pinyin": "míngtiān", "meaning": "tomorrow"},
         {"character": "yesterday", "pinyin": "zuótiān", "meaning": "yesterday"},
         {"character": "上午", "pinyin": "shàngwǔ", "meaning": "morning"},
@@ -505,6 +501,7 @@
         
         currentSrsCard = activeDueList[0];
         
+        // Dynamic flat replacement text injection string
         content.innerHTML = `
             <p class="text-char">${currentSrsCard.character}</p>
             <span class="text-hint">Click card or button to reveal</span>
@@ -514,6 +511,7 @@
         document.getElementById('fc-controls').style.display = 'none';
     }
 
+    // Instantly switches content with zero motion components
     function revealCardData() {
         if (cardIsRevealed || !currentSrsCard) return;
         cardIsRevealed = true;
@@ -639,7 +637,8 @@
         const container = document.getElementById('learn-options-container');
         container.innerHTML = "";
         options.forEach(opt => {
-            const dynamicFont = fieldKey === "character" ? 'style="font-family: \'Ma Shan Zheng\', \'Zhi Mang Xing\', \'KaiTi\', serif;"' : '';
+            // Evaluates whether option key strings carry Hanzi characters to style layout fields cleanly
+            const dynamicFont = fieldKey === "character" ? 'style="font-family: \'KaiTi\', \'Kaiti SC\', serif;"' : '';
             container.innerHTML += `<button class="option-btn" ${dynamicFont} onclick="checkLearnAnswer('${opt.character}')">${opt[fieldKey]}</button>`;
         });
     }
@@ -665,7 +664,7 @@
         tiles.sort(() => Math.random() - 0.5);
         tiles.forEach(t => {
             const el = document.createElement('div'); el.className = 'tile'; el.innerText = t.text; el.dataset.id = t.id; el.dataset.type = t.type;
-            if (t.type === 'char') el.style.fontFamily = '"Ma Shan Zheng", "Zhi Mang Xing", "KaiTi", serif';
+            if (t.type === 'char') el.style.fontFamily = '"KaiTi", "Kaiti SC", "STKaiti", serif';
             el.onclick = () => handleTileClick(el); board.appendChild(el);
         });
         reflexTimeElapsed = 0; clearInterval(reflexTimer);
