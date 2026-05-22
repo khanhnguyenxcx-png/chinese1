@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HSK 1 Intelligent Spaced Repetition Suite</title>
+    <title>HSK 1 Spaced Repetition Suite</title>
     <style>
         :root {
             --primary: #3498db;
@@ -82,7 +82,7 @@
         .feedback-correct { background-color: #d4edda; color: #155724; }
         .feedback-wrong { background-color: #f8d7da; color: #721c24; }
 
-        /* Updated Card Design: Flat Layout without 3D Rotation */
+        /* FIXED: Completely flat card styling with zero animation animations */
         .card-wrapper { height: 230px; margin-bottom: 20px; }
         .flashcard { 
             width: 100%; 
@@ -97,14 +97,12 @@
             padding: 20px; 
             box-sizing: border-box; 
             cursor: pointer;
-            transition: border-color 0.2s, background-color 0.2s;
         }
         .flashcard.revealed {
             border-color: var(--primary);
             background-color: #fcfdfd;
         }
         
-        /* Smooth Fade Transition for text contents */
         .card-content {
             display: flex;
             flex-direction: column;
@@ -112,19 +110,15 @@
             justify-content: center;
             width: 100%;
             height: 100%;
-            transition: opacity 0.15s ease-in-out;
-            opacity: 1;
-        }
-        .card-content.fade-out {
-            opacity: 0;
+            text-align: center;
         }
 
         .text-char { font-size: 56px; font-weight: bold; color: var(--dark); margin: 0; }
         .text-pinyin { font-size: 32px; font-weight: bold; color: #e67e22; margin: 0 0 10px 0; }
-        .text-meaning { font-size: 18px; color: #7f8c8d; margin: 0; text-align: center; }
+        .text-meaning { font-size: 20px; color: #7f8c8d; margin: 0; text-align: center; font-weight: 500; }
         .text-hint { font-size: 11px; color: #b2bec3; position: absolute; bottom: 12px; }
         
-        .btn { padding: 12px 20px; font-size: 15px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: opacity 0.2s; }
+        .btn { padding: 12px 20px; font-size: 15px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; }
         .btn:hover { opacity: 0.9; }
         .btn-main { width: 100%; background: var(--primary); color: white; }
         .anki-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
@@ -171,7 +165,6 @@
         <div class="card-wrapper" onclick="revealCardData()">
             <div class="flashcard" id="flashcardObj">
                 <div class="card-content" id="cardContentPane">
-                    <!-- Standard placeholder content, loaded dynamically below -->
                      <p class="text-char" id="fc-main-display">我</p>
                      <span class="text-hint" id="fc-hint-text">Click card or button to reveal</span>
                 </div>
@@ -277,7 +270,7 @@
         {"character": "里面", "pinyin": "lǐmiàn", "meaning": "inside"},
         {"character": "今天", "pinyin": "jīntiān", "meaning": "today"},
         {"character": "明天", "pinyin": "míngtiān", "meaning": "tomorrow"},
-        {"character": "昨天", "pinyin": "zuótiān", "meaning": "yesterday"},
+        {"character": "yesterday", "pinyin": "zuótiān", "meaning": "yesterday"},
         {"character": "上午", "pinyin": "shàngwǔ", "meaning": "morning"},
         {"character": "中午", "pinyin": "zhōngwǔ", "meaning": "noon"},
         {"character": "下午", "pinyin": "xiàwǔ", "meaning": "afternoon"},
@@ -362,7 +355,6 @@
         {"character": "会", "pinyin": "huì", "meaning": "can, know how to"},
         {"character": "能", "pinyin": "néng", "meaning": "can, be able to"},
         {"character": "好", "pinyin": "hǎo", "meaning": "good, well"},
-        {"character": "大", "p现实", "meaning": "big, large"}, /* Fix placeholder text label */
         {"character": "大", "pinyin": "dà", "meaning": "big, large"},
         {"character": "小", "pinyin": "xiǎo", "meaning": "small, little"},
         {"character": "多", "pinyin": "duō", "meaning": "many, much"},
@@ -373,16 +365,15 @@
         {"character": "漂亮", "pinyin": "piàoliang", "meaning": "beautiful"}
     ];
 
-    // Clean historical duplicates if any from raw source array copy
     const UNIQUE_WORDS = CORE_WORDS.filter((v,i,a)=>a.findIndex(t=>(t.character===v.character))===i);
 
-    // Core Flashcard State Databases
+    // Flashcard SRS states
     let srsRegistry = {}; 
     let activeDueList = [];
     let currentSrsCard = null;
     let cardIsRevealed = false;
 
-    // Mini Modes Databases
+    // Mini game setups
     let learnIndex = 1;
     let learnScore = 0;
     let currentLearnCard = null;
@@ -391,7 +382,6 @@
     let selectedTile = null;
     let reflexBestScore = localStorage.getItem('reflex_pb') || null;
 
-    // Initializer 
     window.onload = function() {
         loadSrsDatabase();
         buildDueQueue();
@@ -441,6 +431,7 @@
     }
 
     function initSrsCardLayout() {
+        cardIsRevealed = false;
         const totalMastered = Object.values(srsRegistry).filter(v => v.interval >= 7).length;
         document.getElementById('fc-mastered').innerText = `Long Term: ${totalMastered}/150`;
 
@@ -448,7 +439,6 @@
         const content = document.getElementById('cardContentPane');
         
         card.classList.remove('revealed');
-        content.classList.remove('fade-out');
 
         if (activeDueList.length === 0) {
             document.getElementById('fc-count').innerText = "Due Cards: 0";
@@ -466,13 +456,17 @@
         
         currentSrsCard = activeDueList[0];
         
-        // Load default front layout view
+        // FIXED: Flat text structural replacement injection
         content.innerHTML = `
             <p class="text-char">${currentSrsCard.character}</p>
             <span class="text-hint">Click card or button to reveal</span>
         `;
+        
+        document.getElementById('fc-reveal-btn').style.display = 'block';
+        document.getElementById('fc-controls').style.display = 'none';
     }
 
+    // FIXED: Swaps internal text completely instantly with absolutely zero motion transformations
     function revealCardData() {
         if (cardIsRevealed || !currentSrsCard) return;
         cardIsRevealed = true;
@@ -480,65 +474,48 @@
         const card = document.getElementById('flashcardObj');
         const content = document.getElementById('cardContentPane');
 
-        // Quick fade transition to mask text swapping structural snap
-        content.classList.add('fade-out');
-
-        setTimeout(() => {
-            card.classList.add('revealed');
-            content.innerHTML = `
-                <p class="text-pinyin">${currentSrsCard.pinyin}</p>
-                <p class="text-meaning">${currentSrsCard.meaning}</p>
-            `;
-            content.classList.remove('fade-out');
-            
-            document.getElementById('fc-reveal-btn').style.display = 'none';
-            document.getElementById('fc-controls').style.display = 'grid';
-        }, 150);
+        card.classList.add('revealed');
+        content.innerHTML = `
+            <p class="text-pinyin">${currentSrsCard.pinyin}</p>
+            <p class="text-meaning">${currentSrsCard.meaning}</p>
+        `;
+        
+        document.getElementById('fc-reveal-btn').style.display = 'none';
+        document.getElementById('fc-controls').style.display = 'grid';
     }
 
-    // Official SM-2 Active Recall Spaced Repetition Core Engine
     function processSRS(qualityScore) {
-        cardIsRevealed = false;
-        
-        const content = document.getElementById('cardContentPane');
-        content.classList.add('fade-out');
+        const charKey = currentSrsCard.character;
+        let record = srsRegistry[charKey];
 
-        setTimeout(() => {
-            document.getElementById('fc-reveal-btn').style.display = 'block';
-            document.getElementById('fc-controls').style.display = 'none';
-            
-            const charKey = currentSrsCard.character;
-            let record = srsRegistry[charKey];
-
-            if (qualityScore < 3) {
-                record.reps = 0;
-                record.interval = 0; 
+        if (qualityScore < 3) {
+            record.reps = 0;
+            record.interval = 0; 
+        } else {
+            if (record.reps === 0) {
+                record.interval = 0.01; 
+            } else if (record.reps === 1) {
+                record.interval = 1; 
+            } else if (record.reps === 2) {
+                record.interval = 4; 
             } else {
-                if (record.reps === 0) {
-                    record.interval = 0.01; 
-                } else if (record.reps === 1) {
-                    record.interval = 1; 
-                } else if (record.reps === 2) {
-                    record.interval = 4; 
-                } else {
-                    record.interval = Math.round(record.interval * record.easeFactor);
-                }
-                record.reps += 1;
+                record.interval = Math.round(record.interval * record.easeFactor);
             }
+            record.reps += 1;
+        }
 
-            record.easeFactor = record.easeFactor + (0.1 - (5 - qualityScore) * (0.08 + (5 - qualityScore) * 0.02));
-            if (record.easeFactor < 1.3) record.easeFactor = 1.3;
+        record.easeFactor = record.easeFactor + (0.1 - (5 - qualityScore) * (0.08 + (5 - qualityScore) * 0.02));
+        if (record.easeFactor < 1.3) record.easeFactor = 1.3;
 
-            const addedMilliseconds = record.interval * 24 * 60 * 60 * 1000;
-            record.nextReviewTime = Date.now() + addedMilliseconds;
+        const addedMilliseconds = record.interval * 24 * 60 * 60 * 1000;
+        record.nextReviewTime = Date.now() + addedMilliseconds;
 
-            srsRegistry[charKey] = record;
-            saveSrsToBrowserMemory();
-            hideNotification();
+        srsRegistry[charKey] = record;
+        saveSrsToBrowserMemory();
+        hideNotification();
 
-            buildDueQueue();
-            initSrsCardLayout();
-        }, 150);
+        buildDueQueue();
+        initSrsCardLayout();
     }
 
     function resetAllSrsData() {
@@ -559,7 +536,7 @@
         event.target.classList.add('active');
         document.getElementById(`view-${view}`).classList.add('active');
 
-        if (view === 'flashcard') { cardIsRevealed = false; buildDueQueue(); initSrsCardLayout(); }
+        if (view === 'flashcard') { buildDueQueue(); initSrsCardLayout(); }
         if (view === 'learn') initLearnQuiz();
         if (view === 'reflex') resetReflexView();
     }
@@ -574,7 +551,7 @@
         document.getElementById('feedbackBanner').style.display = 'none';
     }
 
-    // Learn Mode Modules
+    // LEARN MODE 
     function initLearnQuiz() { learnIndex = 1; learnScore = 0; loadLearnQuestion(); }
     function loadLearnQuestion() {
         if (learnIndex > 10) {
@@ -624,7 +601,7 @@
         learnIndex++; loadLearnQuestion();
     }
 
-    // Reflex Matching Modules
+    // REFLEX MATCHING MODE
     function resetReflexView() { clearInterval(reflexTimer); document.getElementById('reflex-start-screen').style.display = "block"; document.getElementById('reflex-board').style.display = "none"; document.getElementById('reflex-timer').innerText = "Timer: 0.0s"; }
     function startReflexGame() {
         document.getElementById('reflex-start-screen').style.display = "none";
