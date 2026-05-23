@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HSK 1 Spaced Repetition Suite</title>
+    <!-- Universal Google Textbook Web Font Fallback -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Long+Cang&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #3498db;
@@ -12,6 +16,7 @@
             --danger: #e74c3c;
             --dark: #2c3e50;
             --light: #f4f4f9;
+            --xp-color: #9b59b6;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -33,17 +38,58 @@
             box-sizing: border-box;
             position: relative;
         }
+        
+        /* GAMIFICATION HEADER */
+        .game-status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, var(--dark), #34495e);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .xp-bar-container {
+            flex-grow: 1;
+            margin: 0 15px;
+            background: rgba(255,255,255,0.2);
+            height: 10px;
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+        .xp-bar-fill {
+            background: #a29bfe;
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        .streak-badge {
+            background: #e67e22;
+            padding: 4px 8px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         .nav-tabs {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 25px;
             border-bottom: 2px solid #e0e0e0;
             padding-bottom: 10px;
+            overflow-x: auto;
         }
         .tab-btn {
             flex: 1;
-            padding: 12px;
-            font-size: 15px;
+            min-width: 100px;
+            padding: 12px 8px;
+            font-size: 14px;
             font-weight: bold;
             border: none;
             background: #e0e0e0;
@@ -51,6 +97,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
         }
         .tab-btn.active {
             background: var(--primary);
@@ -82,7 +129,7 @@
         .feedback-correct { background-color: #d4edda; color: #155724; }
         .feedback-wrong { background-color: #f8d7da; color: #721c24; }
 
-        /* FIXED: Flat card styling with zero animations */
+        /* Flat card styling */
         .card-wrapper { height: 230px; margin-bottom: 20px; }
         .flashcard { 
             width: 100%; 
@@ -113,10 +160,10 @@
             text-align: center;
         }
 
-        /* UPDATED: Applied KaiTi (Calligraphy/Brush script style) for Chinese Characters */
+        /* Calligraphy styling targets for Hanzi layout layers */
         .text-char { 
-            font-family: "KaiTi", "Kaiti SC", "STKaiti", "AR PL UKai", "TW-Kai", serif;
-            font-size: 72px; /* Marginally scaled up as Kaiti tends to look slightly thinner than generic bold sans-serif */
+            font-family: "KaiTi", "Kaiti SC", "STKaiti", "Long Cang", "Ma Shan Zheng", serif;
+            font-size: 84px; 
             font-weight: normal; 
             color: var(--dark); 
             margin: 0; 
@@ -137,23 +184,21 @@
         .question-box { background: #f8f9fa; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #e9ecef; }
         .q-type-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #95a5a6; font-weight: bold; margin-bottom: 5px; }
         
-        /* UPDATED: Added Kaiti stack here as well for Learn mode questions */
         .q-main { 
-            font-family: "KaiTi", "Kaiti SC", "STKaiti", "AR PL UKai", serif;
-            font-size: 56px; 
+            font-family: "KaiTi", "Kaiti SC", "STKaiti", "Long Cang", serif;
+            font-size: 68px; 
             color: var(--dark); 
             margin: 10px 0; 
         }
         .options-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
         
-        /* UPDATED: Added Kaiti stack to option choices if they feature Hanzi characters */
         .option-btn { 
             font-family: "KaiTi", "Kaiti SC", "STKaiti", -apple-system, sans-serif;
             background: white; 
             border: 2px solid #e0e0e0; 
             padding: 14px; 
             border-radius: 8px; 
-            font-size: 20px; 
+            font-size: 24px; 
             cursor: pointer; 
             text-align: left; 
             transition: all 0.2s; 
@@ -163,7 +208,6 @@
         .reflex-intro { text-align: center; padding: 20px; }
         .grid-reflex { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
         
-        /* UPDATED: Added Kaiti stack to gaming target grid tokens */
         .tile { 
             font-family: "KaiTi", "Kaiti SC", "STKaiti", -apple-system, sans-serif;
             background: white; 
@@ -171,7 +215,7 @@
             border-radius: 8px; 
             padding: 15px 5px; 
             text-align: center; 
-            font-size: 20px; 
+            font-size: 24px; 
             font-weight: 600; 
             cursor: pointer; 
             user-select: none; 
@@ -187,16 +231,98 @@
         .tile.wrong { border-color: var(--danger); background-color: #fee2e2; animation: shake 0.3s ease; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
         
+        /* DICTIONARY VIEW STYLES */
+        .search-bar {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        .search-bar:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        .dict-results {
+            max-height: 450px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 5px;
+        }
+        .dict-item {
+            background: #fff;
+            padding: 12px 15px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+        }
+        .dict-item:last-child { border-bottom: none; }
+        .dict-item:hover { background: #f8fafc; }
+        .dict-header-row {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+        .dict-char {
+            font-family: "KaiTi", "Kaiti SC", "STKaiti", serif;
+            font-size: 28px;
+            color: var(--dark);
+        }
+        .dict-pinyin {
+            font-size: 16px;
+            color: #e67e22;
+            font-weight: bold;
+        }
+        .dict-meaning {
+            font-size: 14px;
+            color: #4a5568;
+        }
+        /* Component Breakdown Box */
+        .component-box {
+            margin-top: 6px;
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        .component-tag {
+            background: #cbd5e1;
+            color: #334155;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-family: "KaiTi", "Kaiti SC", serif;
+            font-size: 13px;
+        }
+
         .debug-box { margin-top: 25px; padding: 10px; background: #eee; border-radius: 6px; font-size: 11px; text-align: center; color: #666; font-family: -apple-system, sans-serif; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
+    <!-- GAMIFICATION STATUS BAR -->
+    <div class="game-status-bar">
+        <div>Lv. <span id="user-level">1</span></div>
+        <div class="xp-bar-container" title="XP Progress Bar">
+            <div class="xp-bar-fill" id="user-xp-fill"></div>
+        </div>
+        <div style="margin-right: 10px; font-size: 12px;"><span id="user-xp-text">0/100</span> XP</div>
+        <div class="streak-badge">🔥 <span id="user-streak">0</span> d</div>
+    </div>
+
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchView('flashcard')">Flashcard (SRS)</button>
         <button class="tab-btn" onclick="switchView('learn')">Learn Mode</button>
         <button class="tab-btn" onclick="switchView('reflex')">Reflex Mode</button>
+        <button class="tab-btn" onclick="switchView('dict')">Dictionary</button>
     </div>
 
     <div class="feedback-banner" id="feedbackBanner"></div>
@@ -250,6 +376,12 @@
         </div>
         <div class="grid-reflex" id="reflex-board" style="display: none;"></div>
     </div>
+
+    <!-- MODE 4: DICTIONARY VIEW WITH COMPONENT BREAKDOWNS -->
+    <div id="view-dict" class="view-section">
+        <input type="text" class="search-bar" id="dict-search-input" placeholder="Search by Hanzi, Pinyin, or English entry..." oninput="filterDictionary()">
+        <div class="dict-results" id="dict-results-box"></div>
+    </div>
     
     <div class="debug-box">
         <span onclick="resetAllSrsData()" style="cursor:pointer; text-decoration: underline;">Reset All Saved Progress Data</span>
@@ -257,160 +389,169 @@
 </div>
 
 <script>
+    // Dictionary tracking elements including logical visual components/radical breakouts
     const CORE_WORDS = [
-        {"character": "我", "pinyin": "wǒ", "meaning": "I, me"},
-        {"character": "我们", "pinyin": "wǒmen", "meaning": "we, us (pl.)"},
-        {"character": "你", "pinyin": "nǐ", "meaning": "you"},
-        {"character": "他", "pinyin": "tā", "meaning": "he, him"},
-        {"character": "她", "pinyin": "tā", "meaning": "she, her"},
-        {"character": "这 (这儿)", "pinyin": "zhè (zhèr)", "meaning": "this (here)"},
-        {"character": "那 (那儿)", "pinyin": "nà (nàr)", "meaning": "that (there)"},
-        {"character": "哪", "pinyin": "nǎ", "meaning": "which"},
-        {"character": "哪儿", "pinyin": "nǎr", "meaning": "where"},
-        {"character": "谁", "pinyin": "shéi", "meaning": "who"},
-        {"character": "什么", "pinyin": "shénme", "meaning": "what, why"},
-        {"character": "多少", "pinyin": "duōshǎo", "meaning": "how many, how much"},
-        {"character": "几", "pinyin": "jǐ", "meaning": "a few, how many"},
-        {"character": "怎么", "pinyin": "zěnme", "meaning": "how"},
-        {"character": "怎么样", "pinyin": "zěnmeyàng", "meaning": "how about"},
-        {"character": "一", "pinyin": "yī", "meaning": "one"},
-        {"character": "二", "pinyin": "èr", "meaning": "two"},
-        {"character": "三", "pinyin": "sān", "meaning": "three"},
-        {"character": "四", "pinyin": "sì", "meaning": "four"},
-        {"character": "五", "pinyin": "wǔ", "meaning": "five"},
-        {"character": "六", "pinyin": "liù", "meaning": "six"},
-        {"character": "七", "pinyin": "qī", "meaning": "seven"},
-        {"character": "八", "pinyin": "bā", "meaning": "eight"},
-        {"character": "九", "pinyin": "jiǔ", "meaning": "nine"},
-        {"character": "十", "pinyin": "shí", "meaning": "ten"},
-        {"character": "个", "pinyin": "gè", "meaning": "(general object measure)"},
-        {"character": "岁", "pinyin": "suì", "meaning": "years old (age)"},
-        {"character": "本", "pinyin": "běn", "meaning": "(measure word for books)"},
-        {"character": "些", "pinyin": "xiē", "meaning": "some, several"},
-        {"character": "块", "pinyin": "kuài", "meaning": "piece, chunk"},
-        {"character": "不", "pinyin": "bù", "meaning": "no, not"},
-        {"character": "没", "pinyin": "méi", "meaning": "have not, no"},
-        {"character": "很", "pinyin": "hěn", "meaning": "quite, very"},
-        {"character": "太", "pinyin": "tài", "meaning": "too, excessively"},
-        {"character": "都", "pinyin": "dōu", "meaning": "all, both"},
-        {"character": "一点儿", "pinyin": "yīdiǎnr", "meaning": "a little bit"},
-        {"character": "和", "pinyin": "hé", "meaning": "and"},
-        {"character": "在", "pinyin": "zài", "meaning": "in, at, present"},
-        {"character": "的", "pinyin": "de", "meaning": "possessive particle"},
-        {"character": "了", "pinyin": "le", "meaning": "completed action particle"},
-        {"character": "吗", "pinyin": "ma", "meaning": "question particle"},
-        {"character": "呢", "pinyin": "ne", "meaning": "modal response particle"},
-        {"character": "喂", "pinyin": "wèi", "meaning": "hello (on phone)"},
-        {"character": "家", "pinyin": "jiā", "meaning": "home, family"},
-        {"character": "学校", "pinyin": "xuéxiào", "meaning": "school"},
-        {"character": "饭店", "pinyin": "fàndiàn", "meaning": "restaurant"},
-        {"character": "商店", "pinyin": "shāngdiàn", "meaning": "store, shop"},
-        {"character": "医院", "pinyin": "yīyuàn", "meaning": "hospital"},
-        {"character": "中国", "pinyin": "Zhōngguó", "meaning": "China"},
-        {"character": "北京", "pinyin": "Běijīng", "meaning": "Beijing"},
-        {"character": "上", "pinyin": "shàng", "meaning": "up, above"},
-        {"character": "下", "pinyin": "xià", "meaning": "down, below"},
-        {"character": "前面", "pinyin": "qiánmiàn", "meaning": "front, ahead"},
-        {"character": "后面", "pinyin": "hòumiàn", "meaning": "behind, rear"},
-        {"character": "里面", "pinyin": "lǐmiàn", "meaning": "inside"},
-        {"character": "今天", "pinyin": "jīntiān", "meaning": "today"},
-        {"character": "明天", "pinyin": "míngtiān", "meaning": "tomorrow"},
-        {"character": "yesterday", "pinyin": "zuótiān", "meaning": "yesterday"},
-        {"character": "上午", "pinyin": "shàngwǔ", "meaning": "morning"},
-        {"character": "中午", "pinyin": "zhōngwǔ", "meaning": "noon"},
-        {"character": "下午", "pinyin": "xiàwǔ", "meaning": "afternoon"},
-        {"character": "年", "pinyin": "nián", "meaning": "year"},
-        {"character": "月", "pinyin": "yuè", "meaning": "month"},
-        {"character": "号", "pinyin": "hào", "meaning": "date number"},
-        {"character": "星期", "pinyin": "xīngqī", "meaning": "week"},
-        {"character": "点", "pinyin": "diǎn", "meaning": "o’clock"},
-        {"character": "分钟", "pinyin": "fēnzhōng", "meaning": "minute"},
-        {"character": "now", "pinyin": "xiànzài", "meaning": "now"},
-        {"character": "时候", "pinyin": "shíhou", "meaning": "time, period"},
-        {"character": "爸爸", "pinyin": "bàba", "meaning": "father"},
-        {"character": "妈妈", "pinyin": "māma", "meaning": "mother"},
-        {"character": "儿子", "pinyin": "érzi", "meaning": "son"},
-        {"character": "女儿", "pinyin": "nǚ'ér", "meaning": "daughter"},
-        {"character": "老师", "pinyin": "lǎoshī", "meaning": "teacher"},
-        {"character": "学生", "pinyin": "xuéshēng", "meaning": "student"},
-        {"character": "同学", "pinyin": "tóngxué", "meaning": "classmate"},
-        {"character": "朋友", "pinyin": "péngyou", "meaning": "friend"},
-        {"character": "医生", "pinyin": "yīshēng", "meaning": "doctor"},
-        {"character": "先生", "pinyin": "xiānsheng", "meaning": "sir, gentleman"},
-        {"character": "小姐", "pinyin": "xiǎojiě", "meaning": "Miss"},
-        {"character": "衣服", "pinyin": "yīfu", "meaning": "clothes"},
-        {"character": "水", "pinyin": "shuǐ", "meaning": "water"},
-        {"character": "菜", "pinyin": "cài", "meaning": "dish, vegetable"},
-        {"character": "米饭", "pinyin": "mǐfàn", "meaning": "cooked rice"},
-        {"character": "水果", "pinyin": "shuǐguǒ", "meaning": "fruit"},
-        {"character": "苹果", "pinyin": "píngguǒ", "meaning": "apple"},
-        {"character": "茶", "pinyin": "chá", "meaning": "tea"},
-        {"character": "杯子", "pinyin": "bēizi", "meaning": "cup, glass"},
-        {"character": "钱", "pinyin": "qián", "meaning": "money"},
-        {"character": "飞机", "pinyin": "fēijī", "meaning": "airplane"},
-        {"character": "出租车", "pinyin": "chūzūchē", "meaning": "taxi"},
-        {"character": "电视", "pinyin": "diànshì", "meaning": "television"},
-        {"character": "电脑", "pinyin": "diànnǎo", "meaning": "computer"},
-        {"character": "电影", "pinyin": "diànyǐng", "meaning": "movie, film"},
-        {"character": "天气", "pinyin": "tiānqì", "meaning": "weather"},
-        {"character": "猫", "pinyin": "māo", "meaning": "cat"},
-        {"character": "狗", "pinyin": "gǒu", "meaning": "dog"},
-        {"character": "东西", "pinyin": "dōngxi", "meaning": "thing, object"},
-        {"character": "人", "pinyin": "rén", "meaning": "person"},
-        {"character": "名字", "pinyin": "míngzi", "meaning": "name"},
-        {"character": "书", "pinyin": "shū", "meaning": "book"},
-        {"character": "汉语", "pinyin": "hànyǔ", "meaning": "Mandarin Chinese"},
-        {"character": "字", "pinyin": "zì", "meaning": "character"},
-        {"character": "桌子", "pinyin": "zhuōzi", "meaning": "desk, table"},
-        {"character": "椅子", "pinyin": "yǐzi", "meaning": "chair"},
-        {"character": "谢谢", "pinyin": "xièxie", "meaning": "thank you"},
-        {"character": "不客气", "pinyin": "búkèqì", "meaning": "you are welcome"},
-        {"character": "再见", "pinyin": "zàijiàn", "meaning": "good-bye"},
-        {"character": "请", "pinyin": "qǐng", "meaning": "please, invite"},
-        {"character": "对不起", "pinyin": "duìbùqǐ", "meaning": "sorry"},
-        {"character": "没关系", "pinyin": "méiguānxì", "meaning": "It doesn’t matter"},
-        {"character": "是", "pinyin": "shì", "meaning": "be (am, is, are)"},
-        {"character": "有", "pinyin": "yǒu", "meaning": "have, possess"},
-        {"character": "看", "pinyin": "kàn", "meaning": "look, watch"},
-        {"character": "听", "pinyin": "tīng", "meaning": "listen"},
-        {"character": "说", "pinyin": "shuō", "meaning": "speak, talk"},
-        {"character": "读", "pinyin": "dú", "meaning": "read aloud"},
-        {"character": "写", "pinyin": "xiě", "meaning": "write"},
-        {"character": "看见", "pinyin": "kànjiàn", "meaning": "see, catch sight of"},
-        {"character": "叫", "pinyin": "jiào", "meaning": "call, name"},
-        {"character": "来", "pinyin": "lái", "meaning": "come"},
-        {"character": "回", "pinyin": "huí", "meaning": "return, go back"},
-        {"character": "去", "pinyin": "qù", "meaning": "go"},
-        {"character": "吃", "pinyin": "chī", "meaning": "eat"},
-        {"character": "喝", "pinyin": "hē", "meaning": "drink"},
-        {"character": "睡觉", "pinyin": "shuìjiào", "meaning": "sleep"},
-        {"character": "打电话", "pinyin": "dǎdiànhuà", "meaning": "make phone call"},
-        {"character": "做", "pinyin": "zuò", "meaning": "do, make"},
-        {"character": "买", "pinyin": "mǎi", "meaning": "buy"},
-        {"character": "开", "pinyin": "kāi", "meaning": "open, drive"},
-        {"character": "坐", "pinyin": "zuò", "meaning": "sit"},
-        {"character": "住", "pinyin": "zhù", "meaning": "live, reside"},
-        {"character": "学习", "pinyin": "xuéxí", "meaning": "study, learn"},
-        {"character": "工作", "pinyin": "gōngzuò", "meaning": "work, job"},
-        {"character": "下雨", "pinyin": "xiàyǔ", "meaning": "rain"},
-        {"character": "爱", "pinyin": "ài", "meaning": "love"},
-        {"character": "喜欢", "pinyin": "xǐhuan", "meaning": "like, love"},
-        {"character": "想", "pinyin": "xiǎng", "meaning": "want, think"},
-        {"character": "认识", "pinyin": "rènshi", "meaning": "know, recognize"},
-        {"character": "会", "pinyin": "huì", "meaning": "can, know how to"},
-        {"character": "能", "pinyin": "néng", "meaning": "can, be able to"},
-        {"character": "好", "pinyin": "hǎo", "meaning": "good, well"},
-        {"character": "大", "pinyin": "dà", "meaning": "big, large"},
-        {"character": "小", "pinyin": "xiǎo", "meaning": "small, little"},
-        {"character": "多", "pinyin": "duō", "meaning": "many, much"},
-        {"character": "少", "pinyin": "shǎo", "meaning": "few, little"},
-        {"character": "冷", "pinyin": "lěng", "meaning": "cold"},
-        {"character": "热", "pinyin": "rè", "meaning": "hot"},
-        {"character": "高兴", "pinyin": "gāoxìng", "meaning": "happy, glad"},
-        {"character": "漂亮", "pinyin": "piàoliang", "meaning": "beautiful"}
+        {"character": "我", "pinyin": "wǒ", "meaning": "I, me", "components": "𠂇 (hand) + 戈 (dagger-axe). Ancient weapon shape stylized into the modern ego self identity."},
+        {"character": "我们", "pinyin": "wǒmen", "meaning": "we, us (pl.)", "components": "们 combines 👤/亻(person radical) + 门 (door/gate providing pronunciation tracking placeholder)."},
+        {"character": "你", "pinyin": "nǐ", "meaning": "you", "components": "👤/亻(person) + 尔 (luxuriant target descriptor). Stands for you directly."},
+        {"character": "他", "pinyin": "tā", "meaning": "he, him", "components": "👤/亻(person) + 也 (also/classical carrier). Modified into the masculine pronoun."},
+        {"character": "她", "pinyin": "tā", "meaning": "she, her", "components": "女 (woman radical) + 也 (classical structural carrier). Feminine pronoun identifier."},
+        {"character": "这 (这儿)", "pinyin": "zhè (zhèr)", "meaning": "this (here)", "components": "辶 (walk/movement) + 文 (culture/writing standard marking spatial locations)."},
+        {"character": "那 (那儿)", "pinyin": "nà (nàr)", "meaning": "that (there)", "components": "𠂤 (mound element stack) + 阝 (city/territory border block marker)."},
+        {"character": "哪", "pinyin": "nǎ", "meaning": "which", "components": "口 (mouth interrogative placeholder) + 那 (standard sound identifier). Used in queries."},
+        {"character": "哪儿", "pinyin": "nǎr", "meaning": "where", "components": "口 (mouth) + 那 + 儿 (child radical marking systemic modern rhoticizations)."},
+        {"character": "谁", "pinyin": "shéi", "meaning": "who", "components": "讠(speech radical tracking informational declarations) + 隹 (short-tailed bird sound component)."},
+        {"character": "什么", "pinyin": "shénme", "meaning": "what, why", "components": "什 features 👤/亻(person) + 十 (ten). 么 holds a structural boundary shape marker."},
+        {"character": "多少", "pinyin": "duōshǎo", "meaning": "how many, how much", "components": "多 balances 夕 + 夕 (stacked crescent moons). 少 stacks 小 (small) with a structural slash tail."},
+        {"character": "几", "pinyin": "jǐ", "meaning": "a few, how many", "components": "几 (small table frame configuration, evolved into simple counting question marks)."},
+        {"character": "怎么", "pinyin": "zěnme", "meaning": "how", "components": "怎 embeds 乍 (sudden action) nested securely on top of 心 (heart/mind cognitive state)."},
+        {"character": "怎么样", "pinyin": "zěnmeyàng", "meaning": "how about", "components": "样 couples 木 (wood standard) with 羊 (sheep phonetic profile identifier)."},
+        {"character": "一", "pinyin": "yī", "meaning": "one", "components": "一 (single pristine primal standard stroke layer line)."},
+        {"character": "二", "pinyin": "èr", "meaning": "two", "components": "二 (dual baseline standard tracking lines)."},
+        {"character": "三", "pinyin": "sān", "meaning": "three", "components": "三 (triple layered standard parallel stroke array lines)."},
+        {"character": "四", "pinyin": "sì", "meaning": "four", "components": "囗 (enclosure perimeter frame border) surrounding ⼓ (split internal atmospheric air segments)."},
+        {"character": "五", "pinyin": "wǔ", "meaning": "five", "components": "二 (primal boundaries) tracking crossing structural connection profiles."},
+        {"character": "六", "pinyin": "liù", "meaning": "six", "components": "亠 (lid roof) balancing a lower inverted baseline supporting foot standard."},
+        {"character": "七", "pinyin": "qī", "meaning": "seven", "components": "横竖 lines intersecting with an upward trending dynamic tail stroke pattern."},
+        {"character": "八", "pinyin": "bā", "meaning": "eight", "components": "八 (two separating strokes moving away from each other; signifies divergence/division)."},
+        {"character": "九", "pinyin": "jiǔ", "meaning": "nine", "components": "𠃋 (dynamic stylized bending framework profile line segment)."},
+        {"character": "十", "pinyin": "shí", "meaning": "ten", "components": "十 (vertical standard cross intersecting coordinate lines representing complete dimensions)."},
+        {"character": "个", "pinyin": "gè", "meaning": "(general object measure)", "components": "个 (bamboo leaf profile marker or vertical structural flow component standard)."},
+        {"character": "岁", "pinyin": "suì", "meaning": "years old (age)", "components": "山 (mountain horizon layer) tracking upper physical time standard cycles below."},
+        {"character": "本", "pinyin": "běn", "meaning": "(measure word for books)", "components": "木 (tree/wood) plus an added marker line stroke highlighting the lower roots/source."},
+        {"character": "些", "pinyin": "xiē", "meaning": "some, several", "components": "此 (this state context) resting on top of 二 (dual base tracking standard layers)."},
+        {"character": "块", "pinyin": "kuài", "meaning": "piece, chunk", "components": "土 (earth/dirt ground radical) tied to 𦾏 (abruptly fragmented cluster profiles)."},
+        {"character": "不", "pinyin": "bù", "meaning": "no, not", "components": "Bird flying upward toward the sky boundary, unable to climb higher; negation indicator."},
+        {"character": "没", "pinyin": "méi", "meaning": "have not, no", "components": "氵(water liquid streams) colliding with 殳 (striking action device tool arm)."},
+        {"character": "很", "pinyin": "hěn", "meaning": "quite, very", "components": "彳(step tracker path) coupled to 艮 (obstinate hard wall boundary layer resistance)."},
+        {"character": "太", "pinyin": "tài", "meaning": "too, excessively", "components": "大 (large human spread frame) anchored down with a centering drop dash indicator stroke."},
+        {"character": "都", "pinyin": "dōu", "meaning": "all, both", "components": "者 (populace grouping) combined with 阝 (town settlement administrative community standard)."},
+        {"character": "一点儿", "pinyin": "yīdiǎnr", "meaning": "a little bit", "components": "点 carries 黑 (black anchor context) over 灬 (four cooking fire element flame drops)."},
+        {"character": "和", "pinyin": "hé", "meaning": "and", "components": "禾 (grain harvest crop) matched symmetrically to 口 (consuming mouth system harmony)."},
+        {"character": "在", "pinyin": "zài", "meaning": "in, at, present", "components": "𠂇 (structural platform hand workspace) embedding 土 (earth ground foundation directly)."},
+        {"character": "的", "pinyin": "de", "meaning": "possessive particle", "components": "白 (pure clear white) merged alongside 勺 (target ladle measuring tracking indicators)."},
+        {"character": "了", "pinyin": "le", "meaning": "completed action particle", "components": "了 (swaddled child wrapping shape framework, indicating resolution/finality)."},
+        {"character": "吗", "pinyin": "ma", "meaning": "question particle", "components": "口 (mouth conversational vector) tied to 马 (horse sound speed modifier engine)."},
+        {"character": "呢", "pinyin": "ne", "meaning": "modal response particle", "components": "口 (mouth speech frame) combined alongside 尼 (monastic peaceful baseline tracking marker)."},
+        {"character": "喂", "pinyin": "wèi", "meaning": "hello (on phone)", "components": "口 (mouth vocalization) tracking 畏 (fearsome respect framework profile layers)."},
+        {"character": "家", "pinyin": "jiā", "meaning": "home, family", "components": "宀 (sheltering roof architecture structure) protecting 豕 (domestic pig livestock asset underneath)."},
+        {"character": "学校", "pinyin": "xuéxiào", "meaning": "school", "components": "学 contains 𦥯 (crowned learning chamber overhead) over 子 (child). 校 provides 木 (wood structure)."},
+        {"character": "饭店", "pinyin": "fàndiàn", "meaning": "restaurant", "components": "饣(food/nourishment) + 反 (turn structure). 店 uses 广 (open shed architecture canopy)."},
+        {"character": "商店", "pinyin": "shāngdiàn", "meaning": "store, shop", "components": "商 (trading marketplace tracking platform structural layers) + 店 (canopied shed standard)."},
+        {"character": "医院", "pinyin": "yīyuàn", "meaning": "hospital", "components": "医 shows 匚 (quiver case protecting an arrow weapon). 院 tracks 阝 (walled perimeter compound)."},
+        {"character": "中国", "pinyin": "Zhōngguó", "meaning": "China", "components": "中 (arrow parsing center target box). 国 positions 玉 (royal imperial jade) inside 囗 (perimeter enclosure)."},
+        {"character": "北京", "pinyin": "Běijīng", "meaning": "Beijing", "components": "北 (two human profiles sitting back-to-back facing north direction). 京 (high watchtower gateway)."},
+        {"character": "上", "pinyin": "shàng", "meaning": "up, above", "components": "Horizontal baseline tracking plane supporting an elevated indicator point marker flag above."},
+        {"character": "下", "pinyin": "xià", "meaning": "down, below", "components": "Horizontal baseline tracking plane anchoring a hanging down indicator point marker drop below."},
+        {"character": "前面", "pinyin": "qiánmiàn", "meaning": "front, ahead", "components": "前 aligns 丷 over ⾓ (forward direction metrics) alongside 刂 (cutting blade edge)."},
+        {"character": "后面", "pinyin": "hòumiàn", "meaning": "behind, rear", "components": "后 balances 彳 (walking path step tracks) holding 口 (command declaration directive layers)."},
+        {"character": "里面", "pinyin": "lǐmiàn", "meaning": "inside", "components": "里 stacks 田 (agricultural field space boundary grids) directly on top of 土 (earth foundation)."},
+        {"character": "今天", "pinyin": "jīntiān", "meaning": "today", "components": "今 (shelter frame compressing local instant immediate timing vectors). 天 (great overarching sky)."},
+        {"character": "明天", "pinyin": "míngtiān", "meaning": "tomorrow", "components": "明 brings together 日 (solar day star) and 月 (lunar month night tracker) for stellar brilliance."},
+        {"character": "yesterday", "pinyin": "zuótiān", "meaning": "yesterday", "components": "昨 binds 日 (day star chronology matrix) alongside 乍 (abrupt sudden temporal change marker)."},
+        {"character": "上午", "pinyin": "shàngwǔ", "meaning": "morning", "components": "午 (meridian sun alignment marker tracking central axis time shifts directly)."},
+        {"character": "中午", "pinyin": "zhōngwǔ", "meaning": "noon", "components": "中 (bisected center target marker axis line) + 午 (noon coordinate framework)."},
+        {"character": "下午", "pinyin": "xiàwǔ", "meaning": "afternoon", "components": "下 (lower level positioning anchor indicator) + 午 (midday timeline pivot)."},
+        {"character": "年", "pinyin": "nián", "meaning": "year", "components": "禾 (grain harvest crop) tracked moving systematically through human seasonal storage processes."},
+        {"character": "月", "pinyin": "yuè", "meaning": "month", "components": "月 (crescent tracking night sky lunar orbit configuration lines)."},
+        {"character": "号", "pinyin": "hào", "meaning": "date number", "components": "口 (proclaiming vocal mouth) over 丂 (expanding vocal breath dynamic array line)."},
+        {"character": "星期", "pinyin": "xīngqī", "meaning": "week", "components": "星 stacks 日 (sun) over 生 (living growth). 期 maps 其 (baskets) alongside 月 (lunar cycles)."},
+        {"character": "点", "pinyin": "diǎn", "meaning": "o’clock", "components": "占 (divination tablet reading framework) anchored down upon 灬 (flaming fire drop points)."},
+        {"character": "分钟", "pinyin": "fēnzhōng", "meaning": "minute", "components": "分 uses 八 (separation divide tool vectors) over 刀 (sharp cutting blade). 钟 provides 钅(metal bell clock)."},
+        {"character": "now", "pinyin": "xiànzài", "meaning": "now", "components": "现 binds 王/玉 (royal processing jade stone luster) to 见 (visual human observer eye system)."},
+        {"character": "时候", "pinyin": "shíhou", "meaning": "time, period", "components": "时 pairs 日 (sun star) with 寸 (rule tracking metrics). 候 tracks 👤/亻(human observer metrics)."},
+        {"character": "爸爸", "pinyin": "bàba", "meaning": "father", "components": "父 (paternal hand standard holding dual crossing guiding authority rods)."},
+        {"character": "妈妈", "pinyin": "māma", "meaning": "mother", "components": "女 (maternal woman caregiver radical) matched alongside 马 (horse speed sound tracking engine)."},
+        {"character": "儿子", "pinyin": "érzi", "meaning": "son", "components": "儿 (infant skull cradle fontanelle structure lines). 子 (swaddled baby profile shape)."},
+        {"character": "女儿", "pinyin": "nǚ'ér", "meaning": "daughter", "components": "女 (graceful sitting kneeling woman posture radical framework) + 儿 (child structure lines)."},
+        {"character": "老师", "pinyin": "lǎoshī", "meaning": "teacher", "components": "老 depicts an old elder profile with long flowing hair. 师 sets an organized training legion unit."},
+        {"character": "学生", "pinyin": "xuéshēng", "meaning": "student", "components": "学 (roof study facility chamber holding young child). 生 (sprout green shoot growing out of soil)."},
+        {"character": "同学", "pinyin": "tóngxué", "meaning": "classmate", "components": "同 aligns 冂 (outer shared shelter structure box) holding an internal unifying 口 (mouth voice)."},
+        {"character": "朋友", "pinyin": "péngyou", "meaning": "friend", "components": "朋 scales 月 + 月 (two matching friendly side-by-side trading shells). 友 joins two hands in support."},
+        {"character": "医生", "pinyin": "yīshēng", "meaning": "doctor", "components": "医 (arrow weapon encased within protective medical box frame boundary layout)."},
+        {"character": "先生", "pinyin": "xiānsheng", "meaning": "sir, gentleman", "components": "先 details 👣 (moving feet advancing forward) over 儿 (man). 生 (sprout growth)."},
+        {"character": "小姐", "pinyin": "xiǎojiě", "meaning": "Miss", "components": "小 (minimal tracking marks). 姐 merges 女 (woman radical) alongside 且 (stacked ancestral altar stone blocks)."},
+        {"character": "衣服", "pinyin": "yīfu", "meaning": "clothes", "components": "衣 (traditional flowing robes showing protective dynamic collar lines)."},
+        {"character": "水", "pinyin": "shuǐ", "meaning": "water", "components": "水 (surging rushing river central vortex stream channel currents with splitting waves)."},
+        {"character": "菜", "pinyin": "cài", "meaning": "dish, vegetable", "components": "艹 (plant grass vegetation layer) over 采 (hand harvesting picking assets from a tree)."},
+        {"character": "米饭", "pinyin": "mǐfàn", "meaning": "cooked rice", "components": "米 (husked seed grains arrayed around an axis). 饭 pairs 饣 (food radical) with 反 (turn handle)."},
+        {"character": "水果", "pinyin": "shuǐguǒ", "meaning": "fruit", "components": "水 (liquid stream) + 果 (tree orchard crown holding three round fully ripened matrix fruits)."},
+        {"character": "苹果", "pinyin": "píngguǒ", "meaning": "apple", "components": "苹 brings 艹 (plant top crown canopy) over 平 (flat peaceful balancing stream level matrix)."},
+        {"character": "茶", "pinyin": "chá", "meaning": "tea", "components": "艹 (herbal plant leaves) separating 人 (human harvester shelter) from 木 (wooden base branches)."},
+        {"character": "杯子", "pinyin": "bēizi", "meaning": "cup, glass", "components": "木 (wooden material profile tracking system) matching 不 (negation/holding shape structure)."},
+        {"character": "钱", "pinyin": "qián", "meaning": "money", "components": "钅(golden metallic resource currency) next to 戈 (dual repeating sharp defensive guard weapons)."},
+        {"character": "飞机", "pinyin": "fēijī", "meaning": "airplane", "components": "飞 (bird spreading its flight wing frames). 机 (wooden machinery loom control gear assets)."},
+        {"character": "出租车", "pinyin": "chūzūchē", "meaning": "taxi", "components": "出 (stacked exiting foot tracks). 租 (crop tax). 车 (overhead view of chariot wheel axle)."},
+        {"character": "电视", "pinyin": "diànshì", "meaning": "television", "components": "电 (lightning bolt stream tracing energy output grids). 视 (vision eye looking intently)."},
+        {"character": "电脑", "pinyin": "diànnǎo", "meaning": "computer", "components": "电 (electrical energy flash) + 脑 (月/肉 body organ tissue holding 𡿺 cerebral data valleys)."},
+        {"character": "电影", "pinyin": "diànyǐng", "meaning": "movie, film", "components": "电 (electricity engine) + 影 (景 solar mountain panorama throwing 彡 dynamic light ray lines)."},
+        {"character": "天气", "pinyin": "tiānqì", "meaning": "weather", "components": "天 (grand sky layer). 气 (surging vapor thermal atmospheric air steam currents rising)."},
+        {"character": "猫", "pinyin": "māo", "meaning": "cat", "components": "豸 (predatory crouching wild animal beast frame) beside 苗 (green farm crop field sprouts)."},
+        {"character": "狗", "pinyin": "gǒu", "meaning": "dog", "components": "犭(wild predatory hound animal paw radical) running next to 句 (coiled curling wrapping trap line)."},
+        {"character": "东西", "pinyin": "dōngxi", "meaning": "thing, object", "components": "东 (sun rising behind wood tree layers east). 西 (bird roosting inside nesting box west)."},
+        {"character": "人", "pinyin": "rén", "meaning": "person", "components": "人 (two simple strokes detailing a profile silhouette standing upright on two sturdy leg columns)."},
+        {"character": "名字", "pinyin": "míngzi", "meaning": "name", "components": "名 pairs 夕 (night darkness) with 口 (mouth shouting identities aloud). 字 (child under roof)."},
+        {"character": "书", "pinyin": "shū", "meaning": "book", "components": "Stylized brush hand script configuration running ink standard lines on ancient sheets."},
+        {"character": "汉语", "pinyin": "hànyǔ", "meaning": "Mandarin Chinese", "components": "汉 (氵water river delta vectors). 语 pairs 讠 (speech radical) with 吾 (the personal ego voice)."},
+        {"character": "字", "pinyin": "zì", "meaning": "character", "components": "宀 (safe domestic shelter roof canopy layer) nurturing a young growing 子 (child profile below)."},
+        {"character": "桌子", "pinyin": "zhuōzi", "meaning": "desk, table", "components": "木 (wooden furniture material) framing an upper elevated structural platform surface display."},
+        {"character": "椅子", "pinyin": "yǐzi", "meaning": "chair", "components": "木 (wood frame assets) combined directly beside 奇 (strange asymmetrical support platform configurations)."},
+        {"character": "谢谢", "pinyin": "xièxie", "meaning": "thank you", "components": "讠(speech communication vectors) connected to 身 (physical bodily frame torso) + 寸 (measured metrics)."},
+        {"character": "不客气", "pinyin": "búkèqì", "meaning": "you are welcome", "components": "客 houses 宀 (roof shelter) protecting 各 (visiting travelers arriving from separate regions)."},
+        {"character": "再见", "pinyin": "zàijiàn", "meaning": "good-bye", "components": "再 (interlocking repetitive tracking loop layout structure). 见 (human walking legs supporting large eye)."},
+        {"character": "请", "pinyin": "qǐng", "meaning": "please, invite", "components": "讠(conversational verbal speech requests) + 青 (vibrant pure green-blue youth color tone indicator)."},
+        {"character": "对不起", "pinyin": "duìbùqǐ", "meaning": "sorry", "components": "对 maps 又 (hand action) to 寸 (rules). 起 has 走 (running feet) pushing 己 (the personal self out)."},
+        {"character": "没关系", "pinyin": "méiguānxì", "meaning": "It doesn’t matter", "components": "关 (interlocking sliding gate latch bars). 系 (silk threads wound tightly on spindles)."},
+        {"character": "是", "pinyin": "shì", "meaning": "be (am, is, are)", "components": "日 (sun/clarity axis anchor) alignment sitting directly over 正 (straight balanced foundational foot)."},
+        {"character": "有", "pinyin": "yǒu", "meaning": "have, possess", "components": "𠂇 (human hand extending outward) harvesting 月 (meat livestock assets from freezing storages)."},
+        {"character": "看", "pinyin": "kàn", "meaning": "look, watch", "components": "手 (human scanning hand shield array layout) tracking shading shelter over 目 (large open eye)."},
+        {"character": "听", "pinyin": "tīng", "meaning": "listen", "components": "口 (consuming mouth vector field) paired right against 斤 (sharp data analytical parsing axe)."},
+        {"character": "说", "pinyin": "shuō", "meaning": "speak, talk", "components": "讠(linguistic communication channels) + 兑 (exchanging cheerful interactive dynamic values)."},
+        {"character": "读", "pinyin": "dú", "meaning": "read aloud", "components": "讠(verbal speech sound projection engine) beside 卖 (commercial trading transaction metrics)."},
+        {"character": "写", "pinyin": "xiě", "meaning": "write", "components": "冖 (canopy framework lines) overlaying 与 (interweaving drawing connection vectors)."},
+        {"character": "看见", "pinyin": "kànjiàn", "meaning": "see, catch sight of", "components": "看 (hand shading eyes scanning space) + 见 (large eyeball structure supported on active human legs)."},
+        {"character": "叫", "pinyin": "jiào", "meaning": "call, name", "components": "口 (vocal mouth gateway mechanism) tracking 丩 (intertwining rope twisting structures)."},
+        {"character": "来", "pinyin": "lái", "meaning": "come", "components": "Ancient wheat crop structure silhouette where grain clusters appear to arrive down towards humans."},
+        {"character": "回", "pinyin": "huí", "meaning": "return, go back", "components": "囗 (outer dimensional wall perimeter boundary) looping around an internal trailing 口 (inner portal vortex)."},
+        {"character": "去", "pinyin": "qù", "meaning": "go", "components": "土 (earth surface baseline soil coordinates) over 厶 (exiting private human space profiles)."},
+        {"character": "吃", "pinyin": "chī", "meaning": "eat", "components": "口 (ingestion tracking entry mouth) placed next to 乞 (begging breathing vocal tracking lines)."},
+        {"character": "喝", "pinyin": "hē", "meaning": "drink", "components": "口 (liquid processing oral gateway) beside 曷 (screaming question sound framework profiles)."},
+        {"character": "睡觉", "pinyin": "shuìjiào", "meaning": "sleep", "components": "睡 maps 目 (eyeball window) next to 垂 (drooping weighted hanging branches falling down closed)."},
+        {"character": "打电话", "pinyin": "dǎdiànhuà", "meaning": "make phone call", "components": "打 has 扌(hand action tool arm). 话 couples 讠(speech tracks) alongside 舌 (active verbal tongue)."},
+        {"character": "做", "pinyin": "zuò", "meaning": "do, make", "components": "👤/亻(human operator engine) + 故 (causal event reasons driving practical industrial fabrications)."},
+        {"character": "买", "pinyin": "mǎi", "meaning": "buy", "components": "乛 (upper purse line tracking grids) holding 头 (currency assets directly stored within layers)."},
+        {"character": "开", "pinyin": "kāi", "meaning": "open, drive", "components": "Two hands lifting a heavy structural locking beam gate latch bar away from a door perimeter axis."},
+        {"character": "坐", "pinyin": "zuò", "meaning": "sit", "components": "从 (two people sitting side-by-side) directly anchored upon 土 (the foundational earth ground platform)."},
+        {"character": "住", "pinyin": "zhù", "meaning": "live, reside", "components": "👤/亻(living person tracking presence) beside 主 (centering master lamp flame standard)."},
+        {"character": "学习", "pinyin": "xuéxí", "meaning": "study, learn", "components": "习 (baby bird wings testing flight control loops repeatedly inside a boundary)."},
+        {"character": "工作", "pinyin": "gōngzuò", "meaning": "work, job", "components": "工 (artisan shaping ruler tool bridge). 作 brings 👤/亻(person) to 乍 (initiating raw actions)."},
+        {"character": "下雨", "pinyin": "xiàyǔ", "meaning": "rain", "components": "雨 features 🚪 (overarching atmospheric cloud perimeter) showering four droplet rain markings inside."},
+        {"character": "爱", "pinyin": "ài", "meaning": "love", "components": "爪 (clutching hands overhead) over 冖 (canopy) cradling 心 (the fragile heart center node)."},
+        {"character": "喜欢", "pinyin": "xǐhuan", "meaning": "like, love", "components": "喜 combines 吉 (auspicious drum celebration) with 口 (joyous mouth voice). 欢 brings 欠 (breathing desires)."},
+        {"character": "想", "pinyin": "xiǎng", "meaning": "want, think", "components": "相 (mutual looking checking eye against timber tree) resting on top of 心 (cognitive center heart)."},
+        {"character": "认识", "pinyin": "rènshi", "meaning": "know, recognize", "components": "识 matches 讠 (verbal data stream channels) beside 只 (directional target parsing metric arrows)."},
+        {"character": "会", "pinyin": "huì", "meaning": "can, know how to", "components": "人 (unifying meeting shelter roof apex line) assembling things inside a container box base."},
+        {"character": "能", "pinyin": "néng", "meaning": "can, be able to", "components": "Ancient symbol depicting a heavy bear beast frame possessing incredible natural physical power."},
+        {"character": "好", "pinyin": "hǎo", "meaning": "good, well", "components": "女 (mother/woman status vector) balanced gracefully holding her newborn 子 (baby boy asset child)."},
+        {"character": "大", "pinyin": "dà", "meaning": "big, large", "components": "Frontal view silhouette profile layout of a human star stretching limbs out wide to show maximum scale."},
+        {"character": "小", "pinyin": "xiǎo", "meaning": "small, little", "components": "A central core line item split into smaller fragments by two separating slash point layout marks."},
+        {"character": "多", "pinyin": "duō", "meaning": "many, much", "components": "夕 (crescent evening night moon visibility tracking profile) stacked twice; multiplying counts."},
+        {"character": "少", "pinyin": "shǎo", "meaning": "few, little", "components": "小 (minimal tiny object tracking points) anchored down with a slashing subtraction sweep lane line."},
+        {"character": "冷", "pinyin": "lěng", "meaning": "cold", "components": "冫(dual ice crystal frost line markings) fused directly to 令 (command/authoritative dictation profile)."},
+        {"character": "热", "pinyin": "rè", "meaning": "hot", "components": "执 (hand managing planting works on soil beds) cooking directly over 灬 (four thermal flame drops)."},
+        {"character": "高兴", "pinyin": "gāoxìng", "meaning": "happy, glad", "components": "高 (tall multi-story gate building architectural tower). 兴 (multiple hands raising a celebratory artifact)."},
+        {"character": "漂亮", "pinyin": "piàoliang", "meaning": "beautiful", "components": "漂 joins 氵(sparkling water stream) to 票 (flaming banner). 亮 shows 𠫓 (high bright architectural lights)."}
     ];
 
     const UNIQUE_WORDS = CORE_WORDS.filter((v,i,a)=>a.findIndex(t=>(t.character===v.character))===i);
+
+    // Gamification state data structures
+    let profileData = {
+        xp: 0,
+        level: 1,
+        streakCount: 0,
+        lastActiveTimestamp: 0
+    };
 
     // Flashcard SRS states
     let srsRegistry = {}; 
@@ -428,30 +569,93 @@
     let reflexBestScore = localStorage.getItem('reflex_pb') || null;
 
     window.onload = function() {
+        initGamificationSystem();
         loadSrsDatabase();
         buildDueQueue();
         initSrsCardLayout();
+        filterDictionary();
         if(reflexBestScore) {
             document.getElementById('reflex-highscore').innerText = `Best: ${reflexBestScore}s`;
         }
     };
 
+    // GAMIFICATION MECHANICS
+    function initGamificationSystem() {
+        const storedProfile = localStorage.getItem('hsk1_gamer_profile');
+        if (storedProfile) {
+            profileData = JSON.parse(storedProfile);
+        }
+        
+        processStreakValidation();
+        renderGamificationInterface();
+    }
+
+    function saveGamificationProfile() {
+        localStorage.setItem('hsk1_gamer_profile', JSON.stringify(profileData));
+    }
+
+    function processStreakValidation() {
+        const midnightToday = new Date().setHours(0,0,0,0);
+        const midnightYesterday = midnightToday - (24 * 60 * 60 * 1000);
+        
+        if (profileData.lastActiveTimestamp !== 0) {
+            if (profileData.lastActiveTimestamp >= midnightYesterday && profileData.lastActiveTimestamp < midnightToday) {
+                // Active yesterday, streak safely preserved
+            } else if (profileData.lastActiveTimestamp < midnightYesterday) {
+                profileData.streakCount = 0; // Missed a day, reset streak
+            }
+        }
+    }
+
+    function creditXpPoints(amount) {
+        profileData.xp += amount;
+        
+        // Check for active level ups (Threshold matches 100 points per level scaling flat)
+        let nextLevelThreshold = profileData.level * 100;
+        let leveledUp = false;
+        
+        while (profileData.xp >= nextLevelThreshold) {
+            profileData.xp -= nextLevelThreshold;
+            profileData.level++;
+            nextLevelThreshold = profileData.level * 100;
+            leveledUp = true;
+        }
+
+        // Track running profile timestamp updates
+        const oldTimestamp = profileData.lastActiveTimestamp;
+        const midnightToday = new Date().setHours(0,0,0,0);
+        if (oldTimestamp < midnightToday) {
+            profileData.streakCount++;
+            profileData.lastActiveTimestamp = Date.now();
+        }
+
+        saveGamificationProfile();
+        renderGamificationInterface();
+
+        if (leveledUp) {
+            showNotification(`🚀 LEVEL UP! You reached Level ${profileData.level}! Keep pushing!`, true);
+        }
+    }
+
+    function renderGamificationInterface() {
+        document.getElementById('user-level').innerText = profileData.level;
+        document.getElementById('user-streak').innerText = profileData.streakCount;
+        
+        const nextLevelThreshold = profileData.level * 100;
+        document.getElementById('user-xp-text').innerText = `${profileData.xp}/${nextLevelThreshold}`;
+        
+        const calculationPercentage = (profileData.xp / nextLevelThreshold) * 100;
+        document.getElementById('user-xp-fill').style.width = `${calculationPercentage}%`;
+    }
+
+    // SRS STATE MANAGERS
     function loadSrsDatabase() {
         const stored = localStorage.getItem('hsk1_srs_database');
-        if (stored) {
-            srsRegistry = JSON.parse(stored);
-        } else {
-            srsRegistry = {};
-        }
+        if (stored) { srsRegistry = JSON.parse(stored); }
         
         UNIQUE_WORDS.forEach(w => {
             if (!srsRegistry[w.character]) {
-                srsRegistry[w.character] = {
-                    reps: 0,
-                    interval: 0, 
-                    easeFactor: 2.5,
-                    nextReviewTime: 0 
-                };
+                srsRegistry[w.character] = { reps: 0, interval: 0, easeFactor: 2.5, nextReviewTime: 0 };
             }
         });
         saveSrsToBrowserMemory();
@@ -462,16 +666,10 @@
     }
 
     function buildDueQueue() {
-        const now = Date.now();
-        activeDueList = [];
-        
+        const now = Date.now(); activeDueList = [];
         UNIQUE_WORDS.forEach(w => {
-            const tracking = srsRegistry[w.character];
-            if (tracking.nextReviewTime <= now) {
-                activeDueList.push(w);
-            }
+            if (srsRegistry[w.character].nextReviewTime <= now) activeDueList.push(w);
         });
-        
         activeDueList.sort(() => Math.random() - 0.5);
     }
 
@@ -482,7 +680,6 @@
 
         const card = document.getElementById('flashcardObj');
         const content = document.getElementById('cardContentPane');
-        
         card.classList.remove('revealed');
 
         if (activeDueList.length === 0) {
@@ -492,39 +689,25 @@
                 <p class="text-meaning" style="margin-top:10px;">Your scheduled items are clear. Come back later!</p>
             `;
             document.getElementById('fc-reveal-btn').setAttribute("disabled", "true");
-            currentSrsCard = null;
-            return;
+            currentSrsCard = null; return;
         }
 
         document.getElementById('fc-reveal-btn').removeAttribute("disabled");
         document.getElementById('fc-count').innerText = `Due Cards: ${activeDueList.length}`;
-        
         currentSrsCard = activeDueList[0];
         
-        // Dynamic flat replacement text injection string
-        content.innerHTML = `
-            <p class="text-char">${currentSrsCard.character}</p>
-            <span class="text-hint">Click card or button to reveal</span>
-        `;
-        
+        content.innerHTML = `<p class="text-char">${currentSrsCard.character}</p><span class="text-hint">Click card or button to reveal</span>`;
         document.getElementById('fc-reveal-btn').style.display = 'block';
         document.getElementById('fc-controls').style.display = 'none';
     }
 
-    // Instantly switches content with zero motion components
     function revealCardData() {
         if (cardIsRevealed || !currentSrsCard) return;
         cardIsRevealed = true;
-
         const card = document.getElementById('flashcardObj');
         const content = document.getElementById('cardContentPane');
-
         card.classList.add('revealed');
-        content.innerHTML = `
-            <p class="text-pinyin">${currentSrsCard.pinyin}</p>
-            <p class="text-meaning">${currentSrsCard.meaning}</p>
-        `;
-        
+        content.innerHTML = `<p class="text-pinyin">${currentSrsCard.pinyin}</p><p class="text-meaning">${currentSrsCard.meaning}</p>`;
         document.getElementById('fc-reveal-btn').style.display = 'none';
         document.getElementById('fc-controls').style.display = 'grid';
     }
@@ -534,42 +717,64 @@
         let record = srsRegistry[charKey];
 
         if (qualityScore < 3) {
-            record.reps = 0;
-            record.interval = 0; 
+            record.reps = 0; record.interval = 0; 
         } else {
-            if (record.reps === 0) {
-                record.interval = 0.01; 
-            } else if (record.reps === 1) {
-                record.interval = 1; 
-            } else if (record.reps === 2) {
-                record.interval = 4; 
-            } else {
-                record.interval = Math.round(record.interval * record.easeFactor);
-            }
+            if (record.reps === 0) record.interval = 0.01; 
+            else if (record.reps === 1) record.interval = 1; 
+            else if (record.reps === 2) record.interval = 4; 
+            else record.interval = Math.round(record.interval * record.easeFactor);
             record.reps += 1;
+            creditXpPoints(15); // Award flat 15 XP for clean review retention submissions
         }
 
         record.easeFactor = record.easeFactor + (0.1 - (5 - qualityScore) * (0.08 + (5 - qualityScore) * 0.02));
         if (record.easeFactor < 1.3) record.easeFactor = 1.3;
-
-        const addedMilliseconds = record.interval * 24 * 60 * 60 * 1000;
-        record.nextReviewTime = Date.now() + addedMilliseconds;
+        record.nextReviewTime = Date.now() + (record.interval * 24 * 60 * 60 * 1000);
 
         srsRegistry[charKey] = record;
-        saveSrsToBrowserMemory();
-        hideNotification();
+        saveSrsToBrowserMemory(); hideNotification(); buildDueQueue(); initSrsCardLayout();
+    }
 
-        buildDueQueue();
-        initSrsCardLayout();
+    // DICTIONARY AND RADICAL LOGIC COMPONENT EXTRACTORS
+    function filterDictionary() {
+        const searchQuery = document.getElementById('dict-search-input').value.toLowerCase().trim();
+        const resultsBox = document.getElementById('dict-results-box');
+        resultsBox.innerHTML = "";
+
+        const filtered = UNIQUE_WORDS.filter(w => {
+            return w.character.toLowerCase().includes(searchQuery) || 
+                   w.pinyin.toLowerCase().includes(searchQuery) || 
+                   w.meaning.toLowerCase().includes(searchQuery);
+        });
+
+        if(filtered.length === 0) {
+            resultsBox.innerHTML = `<div style="padding: 20px; text-align: center; color: #718096; font-size: 14px;">No matching lexicon records found.</div>`;
+            return;
+        }
+
+        filtered.forEach(item => {
+            resultsBox.innerHTML += `
+                <div class="dict-item">
+                    <div class="dict-header-row">
+                        <span class="dict-char">${item.character}</span>
+                        <span class="dict-pinyin">${item.pinyin}</span>
+                    </div>
+                    <div class="dict-meaning">${item.meaning}</div>
+                    <div class="component-box">
+                        <span class="component-tag">Breakdown</span> ${item.components || "Primitive character foundation element line structures."}
+                    </div>
+                </div>
+            `;
+        });
     }
 
     function resetAllSrsData() {
-        if(confirm("Are you sure you want to completely erase your saved review history points and restart from zero?")) {
-            localStorage.removeItem('hsk1_srs_database');
-            loadSrsDatabase();
-            buildDueQueue();
-            initSrsCardLayout();
-            showNotification("Memory storage database purged successfully.", true);
+        if(confirm("Are you sure you want to completely reset all cards, streak levels, and accumulated XP values back to zero?")) {
+            localStorage.clear();
+            profileData = { xp: 0, level: 1, streakCount: 0, lastActiveTimestamp: 0 };
+            srsRegistry = {};
+            loadSrsDatabase(); buildDueQueue(); initSrsCardLayout(); renderGamificationInterface(); filterDictionary();
+            showNotification("All database layers reset back to zero successfully.", true);
         }
     }
 
@@ -584,6 +789,7 @@
         if (view === 'flashcard') { buildDueQueue(); initSrsCardLayout(); }
         if (view === 'learn') initLearnQuiz();
         if (view === 'reflex') resetReflexView();
+        if (view === 'dict') filterDictionary();
     }
 
     function showNotification(text, isCorrect) {
@@ -592,17 +798,14 @@
         banner.className = `feedback-banner ${isCorrect ? 'feedback-correct' : 'feedback-wrong'}`;
         banner.style.display = 'block';
     }
-    function hideNotification() {
-        document.getElementById('feedbackBanner').style.display = 'none';
-    }
+    function hideNotification() { document.getElementById('feedbackBanner').style.display = 'none'; }
 
-    // LEARN MODE 
+    // LEARN MODE LOOPS
     function initLearnQuiz() { learnIndex = 1; learnScore = 0; loadLearnQuestion(); }
     function loadLearnQuestion() {
         if (learnIndex > 10) {
             showNotification(`🎯 Session Complete! Points: ${learnScore}/10`, true);
-            initLearnQuiz();
-            return;
+            initLearnQuiz(); return;
         }
         document.getElementById('learn-progress').innerText = `Question: ${learnIndex}/10`;
         document.getElementById('learn-score').innerText = `Points: ${learnScore}`;
@@ -634,21 +837,22 @@
             if (!options.some(o => o.character === candidate.character)) options.push(candidate);
         }
         options.sort(() => Math.random() - 0.5);
-        const container = document.getElementById('learn-options-container');
-        container.innerHTML = "";
+        const container = document.getElementById('learn-options-container'); container.innerHTML = "";
         options.forEach(opt => {
-            // Evaluates whether option key strings carry Hanzi characters to style layout fields cleanly
             const dynamicFont = fieldKey === "character" ? 'style="font-family: \'KaiTi\', \'Kaiti SC\', serif;"' : '';
             container.innerHTML += `<button class="option-btn" ${dynamicFont} onclick="checkLearnAnswer('${opt.character}')">${opt[fieldKey]}</button>`;
         });
     }
     function checkLearnAnswer(selectedChar) {
-        if (selectedChar === currentLearnCard.character) { learnScore++; showNotification("✓ Correct Answer!", true); } 
-        else { showNotification(`❌ Incorrect. Answer was: ${currentLearnCard.character} -> ${currentLearnCard.pinyin}`, false); }
+        if (selectedChar === currentLearnCard.character) { 
+            learnScore++; creditXpPoints(10); showNotification("✓ Correct! +10 XP earned.", true); 
+        } else { 
+            showNotification(`❌ Incorrect. Target was: ${currentLearnCard.character} -> ${currentLearnCard.pinyin}`, false); 
+        }
         learnIndex++; loadLearnQuestion();
     }
 
-    // REFLEX MATCHING MODE
+    // REFLEX GAME LOOPS
     function resetReflexView() { clearInterval(reflexTimer); document.getElementById('reflex-start-screen').style.display = "block"; document.getElementById('reflex-board').style.display = "none"; document.getElementById('reflex-timer').innerText = "Timer: 0.0s"; }
     function startReflexGame() {
         document.getElementById('reflex-start-screen').style.display = "none";
@@ -686,11 +890,12 @@
         const remaining = document.querySelectorAll('.tile:not(.matched)');
         if (remaining.length === 0) {
             clearInterval(reflexTimer); const score = reflexTimeElapsed.toFixed(1);
+            creditXpPoints(50); // Award a massive 50 XP bonus for running clean speed-matching cycles
             if (!reflexBestScore || parseFloat(score) < parseFloat(reflexBestScore)) {
                 reflexBestScore = score; localStorage.setItem('reflex_pb', score);
                 document.getElementById('reflex-highscore').innerText = `Best: ${reflexBestScore}s`;
             }
-            showNotification(`⚡ Finished in ${score}s!`, true); resetReflexView();
+            showNotification(`⚡ Game Over! Finished in ${score}s! +50 XP bonus credited.`, true); resetReflexView();
         }
     }
 </script>
